@@ -1,0 +1,36 @@
+import sys, json
+from playwright.sync_api import sync_playwright
+W=int(sys.argv[1]) if len(sys.argv)>1 else 390
+H=int(sys.argv[2]) if len(sys.argv)>2 else 844
+with sync_playwright() as p:
+    b=p.chromium.launch()
+    ctx=b.new_context(viewport={'width':W,'height':H},device_scale_factor=2,is_mobile=True,has_touch=True)
+    pg=ctx.new_page()
+    pg.goto('http://127.0.0.1:8765/index.html?seed=3&speed=1')
+    pg.wait_for_selector('#deck')
+    # シッピン勝ち: 取り出しやすいよう配札固定
+    pg.evaluate('window.__kabu.stack([3,11,5,6,8, 9,14,2,7,10])')
+    pg.tap('#deck')
+    pg.wait_for_function("window.__kabu.snapshot().stage==='dealing'")
+    pg.wait_for_timeout(900)
+    pg.screenshot(path=f'tests/shots/moment_{W}_dealing.png')
+    pg.wait_for_function("window.__kabu.snapshot().stage==='pick'", timeout=20000)
+    pg.tap('.lane[data-lane="1"]'); pg.tap('.coin[data-amount="100"]')
+    pg.wait_for_timeout(500)
+    pg.tap('#slotBtn')
+    pg.wait_for_function("window.__kabu.snapshot().stage==='dealing2'")
+    pg.wait_for_timeout(1000)
+    pg.screenshot(path=f'tests/shots/moment_{W}_dealing2.png')
+    pg.wait_for_function("window.__kabu.snapshot().stage==='decide'", timeout=20000)
+    pg.tap('#standBtn')
+    pg.wait_for_function("window.__kabu.snapshot().stage==='reveal'", timeout=20000)
+    pg.wait_for_timeout(900)
+    pg.screenshot(path=f'tests/shots/moment_{W}_reveal1.png')
+    pg.wait_for_function("document.getElementById('cutin').classList.contains('on')", timeout=20000)
+    pg.wait_for_timeout(320)
+    pg.screenshot(path=f'tests/shots/moment_{W}_cutin.png')
+    pg.wait_for_function("window.__kabu.snapshot().stage==='result'", timeout=20000)
+    pg.wait_for_timeout(900)
+    pg.screenshot(path=f'tests/shots/moment_{W}_result.png')
+    print(json.dumps(pg.evaluate('window.__kabu.snapshot().last'), ensure_ascii=False)[:300])
+    b.close()
