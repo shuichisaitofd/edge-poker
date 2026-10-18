@@ -1,39 +1,231 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"><meta name="theme-color" content="#eef4ff"><title>3D カブ | KABU TABLE</title>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#e9eef8">
+<title>KABU TABLE Animated Prototype</title>
 <style>
-:root{--blue:#496ee1;--ink:#172d59;--line:#c3d1ef;--bg:#eef3fc;--gold:#f9ca4c}
-*{box-sizing:border-box}body{margin:0;background:#e4ebf8;color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;-webkit-tap-highlight-color:transparent}button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.42;cursor:default}
-.shell{max-width:680px;min-height:100dvh;margin:0 auto;background:linear-gradient(#f9fbff,#e8eef9);display:flex;flex-direction:column;overflow:hidden}.header{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;background:#fff;border-bottom:1px solid #dbe4f4}.logo{font-size:21px;font-weight:1000;letter-spacing:-.06em}.logo span{color:#4772e9}.header-right{font-size:12px;font-weight:800;border-radius:25px;background:#edf4ff;color:#4973d6;padding:7px 12px}.game{flex:1;padding:12px 12px 22px;display:flex;flex-direction:column;gap:12px}.hud{display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:13px}.chip-summary{background:#fff;border:1px solid #d9e4f5;padding:9px 12px;border-radius:14px}.chip-summary strong{font-size:18px;color:#3564d8}.hud .round{color:#6980a6;font-weight:700}
-.arena{position:relative;min-height:480px;height:min(65dvh,600px);max-height:650px;background:radial-gradient(ellipse at 50% 0%,#f9fdff,#cbdbfa 83%);border:1px solid #cfddf3;border-radius:22px;overflow:hidden;perspective:880px;isolation:isolate}.wall{position:absolute;inset:0 0 45%;background:repeating-linear-gradient(90deg,#eef5ff 0 21px,#e0ebfa 22px 24px);opacity:.6}.floor{position:absolute;inset:48% 0 0;background:linear-gradient(#dce8fa,#c1d3ed)}.table-wrap{position:absolute;left:50%;top:52%;width:112%;height:72%;transform:translate(-50%,-48%) rotateX(32deg);transform-style:preserve-3d}.rail{position:absolute;inset:0;border-radius:46% 46% 34% 34%/35% 35% 29% 29%;background:linear-gradient(130deg,#244d98,#193f88 55%,#143165);box-shadow:0 18px 0 #102a5b,0 27px 22px #6b84aa7d;padding:13px}.felt{position:relative;width:100%;height:100%;border-radius:inherit;background:radial-gradient(ellipse at 52% 38%,#5778e6,#3157b7 79%);border:3px solid #90a9f1;box-shadow:inset 0 0 0 2px #537bda;overflow:hidden}.felt:before{content:"";position:absolute;inset:9% 7%;border:2px solid #a1b7ff70;border-radius:inherit}.dealer-zone,.lanes{position:absolute;z-index:3;left:50%;transform:translateX(-50%);width:94%;text-align:center}.dealer-zone{top:7%;pointer-events:none}.lanes{top:48%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;align-items:start}.lane{padding:8px 0 6px;background:transparent;border:2px solid transparent;border-radius:15px;min-height:100px;display:flex;align-items:center;flex-direction:column;gap:4px;transition:background .2s,border-color .2s,transform .2s}.lane.active{border-color:#fff19d;background:#ffffff36;box-shadow:0 0 18px #fbe76c8a;transform:translateY(-5px)}.lane.pickable{cursor:pointer}.lane.pickable:active{transform:scale(.95)}.lane-name{color:#e7efff;font-weight:900;font-size:12px;text-shadow:0 1px 2px #17387e}.lane.active .lane-name{color:#fff6a9}.cards{display:flex;justify-content:center;min-height:69px;align-items:center;gap:0}.playing-card{position:relative;flex:none;width:41px;height:61px;border-radius:6px;background:#fff;border:1px solid #c6d5ed;box-shadow:1px 4px 0 #102c6c66;display:flex;align-items:center;justify-content:center;font-size:28px;color:#1c2838;font-family:Georgia,serif;transform:translateZ(2px);animation:appear .3s backwards}.playing-card:not(:first-child){margin-left:-19px;transform:translate(0,6px)}.playing-card.red{color:#e44152}.playing-card .corner{position:absolute;left:4px;top:2px;font:800 14px system-ui}.playing-card.back{background:repeating-linear-gradient(45deg,#4d78d9 0 4px,#6e9aee 4px 8px);border:4px solid #fff}.playing-card.empty{background:#ffffff35;border:2px dashed #e7efff75;box-shadow:none}.dealer-zone .cards{min-height:62px}.dealer-zone .playing-card{height:57px;width:39px}.lane-score{font-weight:900;font-size:13px;color:#fdfcbd;text-shadow:0 1px 3px #263e8e}.table-label{position:absolute;top:36%;left:0;right:0;text-align:center;font-size:16px;font-weight:1000;letter-spacing:.15em;color:#d7e5ff71}.npc{position:absolute;z-index:5;top:5%;left:50%;transform:translateX(-50%);display:flex;align-items:center;flex-direction:column}.head{width:52px;height:52px;border-radius:50%;background:#ffcf9b;border:4px solid #fff;box-shadow:0 1px 0 3px #6b90e3;position:relative;overflow:hidden}.head:before{content:"";position:absolute;top:-10px;left:-5px;right:-5px;height:29px;background:#374c73;border-radius:35%}.head:after{content:"•  •";position:absolute;top:23px;left:13px;color:#283754;font-size:15px}.head.you:before{background:#e6a55b}.tag{font-size:11px;color:#fff;background:#305bb9;border-radius:8px;padding:4px 10px;font-weight:900;margin-top:4px;box-shadow:0 3px 8px #4b72a866}.opponent{top:3%}.you-avatar{top:auto;bottom:3%;left:15%;transform:none}.you-avatar .head{width:44px;height:44px}.you-avatar .head:after{top:17px;left:9px}.pot{position:absolute;bottom:4%;left:48%;transform:translateX(-50%);z-index:6;background:#0f326ebf;border:1px solid #ffffff72;padding:7px 13px;border-radius:12px;text-align:center;color:#fff;box-shadow:0 4px 8px #15376455}.pot small{display:block;color:#c7dcff;font-size:10px}.pot strong{font-size:18px}.chips{position:absolute;z-index:5;bottom:21%;left:47%;transform:translateX(-50%)}.chip{position:absolute;width:35px;height:13px;background:#396dd5;border:3px solid #e4f4ff;border-radius:50%;box-shadow:0 3px 0 #164cba,0 6px 0 #94b7fd,0 9px 0 #164cba,0 12px 0 #94b7fd}.chip:nth-child(2){left:13px;top:10px;background:#ffbb45;border-color:#fff4ae;box-shadow:0 3px 0 #c98824,0 6px 0 #ffbb45,0 9px 0 #c98824}.chip:nth-child(3){left:-13px;top:18px;background:#db5967;border-color:#ffe6ed;box-shadow:0 3px 0 #96394a,0 6px 0 #db5967}
-.panel{background:#fff;border:1px solid #d8e3f3;border-radius:17px;padding:15px;box-shadow:0 5px 18px #466fba0d}.info{min-height:83px;display:flex;flex-direction:column;justify-content:center;gap:5px}.info strong{font-size:17px}.info p{margin:0;font-size:13px;color:#667d9e;line-height:1.5}.action{display:flex;flex-direction:column;gap:9px}.primary,.secondary,.danger{border:0;border-radius:13px;min-height:53px;font-size:15px;font-weight:900}.primary{color:white;background:#4171e6;box-shadow:0 4px 0 #2c53ae}.primary:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #2c53ae}.secondary{background:#e9f0ff;color:#315fc6}.danger{background:#fff1f0;color:#bd4b50}.choice{display:grid;grid-template-columns:1fr 1fr;gap:9px}.bets{display:flex;align-items:center;gap:9px}.bets button{width:50px;height:45px;border-radius:12px;border:1px solid #d1dff4;background:#f0f5ff;color:#3561ba;font-size:23px}.bets .amount{flex:1;text-align:center;font-size:22px;font-weight:950;color:#315ec3}.bets label{font-size:13px;color:#627a9b}.notes{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;color:#7287a6}.notes button{background:transparent;border:0;color:#5170b8;text-decoration:underline;font-size:12px}.guide{padding:12px 16px;background:white;border-radius:12px;border:1px solid #dfe7f5;font-size:12px;color:#51688b;line-height:1.8}.guide summary{cursor:pointer;font-weight:850;color:#314e82}.guide p{margin:8px 0 0} @keyframes appear{from{opacity:0;transform:translateY(-15px) scale(.8)}to{opacity:1}}@media(max-width:390px){.arena{height:495px;min-height:470px}.table-wrap{width:120%;height:71%}.playing-card{width:35px;height:55px;font-size:24px}.playing-card:not(:first-child){margin-left:-18px}.lane{padding:7px 0;min-height:90px}.lane-name{font-size:10px}.game{padding:9px;gap:9px}}
- .steps{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;background:#fff;border:1px solid #dce6f5;padding:7px 4px;border-radius:12px}.step{font-size:10px;color:#8b9bb2;text-align:center;font-weight:800;line-height:1.4;padding:4px 1px;border-radius:7px}.step b{display:block;width:22px;height:22px;line-height:22px;margin:0 auto 3px;border-radius:50%;background:#e6edfa;color:#8ca0c8}.step.current{background:#e9f0ff;color:#315fcb}.step.current b{background:#4674e6;color:#fff}.step.past{color:#42a07a}.step.past b{background:#def5e9;color:#24845e}.action-guide{font-size:12px;color:#48699d;font-weight:800;text-align:center;line-height:1.5}.selection-hint{position:absolute;z-index:9;bottom:14%;left:50%;transform:translateX(-50%);width:max-content;max-width:90%;background:#fff9de;color:#80601c;border-radius:30px;box-shadow:0 4px 15px #12336233;border:1px solid #ffe28a;padding:8px 12px;font-size:12px;font-weight:900;text-align:center;pointer-events:none}.selection-hint[hidden]{display:none}.action-step{font-size:12px;color:#456bc1;font-weight:900;margin-bottom:2px}.lane.pickable{animation:pickpulse 1.8s ease-in-out infinite}.lane.active{animation:none}@keyframes pickpulse{50%{background:#ffffff25}} </style></head><body><div class="shell"><header class="header"><div class="logo">KABU<span> 3D</span></div><div class="header-right">ひとりで遊べるカブ</div></header><main class="game"><div class="steps" id="steps" aria-label="進行ステップ"></div><div class="hud"><div class="chip-summary">所持チップ <strong id="balance">1000</strong></div><div class="round" id="round">ROUND 1</div></div><section class="arena" aria-label="立体風のカブのゲーム卓"><div class="wall"></div><div class="floor"></div><div class="table-wrap"><div class="rail"><div class="felt"><div class="table-label">K A B U</div><div class="dealer-zone"><div class="cards" id="dealerCards"></div><div class="lane-name">親の札</div></div><div class="lanes" id="lanes"></div></div></div></div><div class="npc opponent"><div class="head"></div><div class="tag">親・CPU</div></div><div class="npc you-avatar"><div class="head you"></div><div class="tag">あなた</div></div><div class="chips"><i class="chip"></i><i class="chip"></i><i class="chip"></i></div><div class="selection-hint" id="tableHint" hidden></div><div class="pot"><small>BET</small><strong id="pot">0</strong></div></section><section class="panel info"><div class="action-step" id="actionStep">準備</div><strong id="title">カブに挑戦！</strong><p id="message">4枚の場札から1枚選んで、合計9点に近づけましょう。</p></section><section class="panel action"><div id="bets" class="bets" hidden><label>賭け点</label><button id="minus" aria-label="賭け点を減らす">−</button><div class="amount" id="betValue">100</div><button id="plus" aria-label="賭け点を増やす">＋</button></div><div class="choice" id="choices" hidden><button class="secondary" id="stop">引かない</button><button class="primary" id="draw">もう1枚引く</button></div><div class="action-guide" id="actionGuide">まずはゲームを開始してください</div><button id="primary" class="primary">ゲームをスタート</button></section><div class="notes"><span>架空のチップのみ使用します</span><button id="reset">最初からやり直す</button></div><details class="guide"><summary>遊び方・役の説明</summary><p>場の4枚から1か所選択し、賭け点を決めます。すべての場に2枚目が配られたあと、選んだ場に3枚目を引くか決めます。親にも最大3枚配られます。合計の1の位が9に近い側が勝利します。</p><p>ミッピン：Aと4（プレイヤーのみ、3倍）。クッピン：Aと9（親のみ、無条件勝利）。嵐：3枚同数字（5倍、A・3・5・10は10倍）。順子：同一スートの3枚連番（5倍）。</p></details></main></div>
+:root{font-family:system-ui,-apple-system,"Hiragino Sans",sans-serif;color:#233350;font-synthesis:none}
+*{box-sizing:border-box}
+body{margin:0;background:#dbe4f4}
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid #f7c64e;outline-offset:3px}
+.app{max-width:520px;margin:auto;min-height:100dvh;background:#eff3fb;display:flex;flex-direction:column;overflow:hidden}
+.head{height:59px;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 19px;box-shadow:0 2px 12px #36548a12;z-index:1}
+.brand{font-size:19px;font-weight:1000;letter-spacing:-.06em}.brand em{color:#5173df;font-style:normal}
+.meta{font-size:11px;color:#7f8fac;font-weight:750}.balance{font-size:13px;background:#edf2fe;padding:9px 12px;border-radius:30px;font-weight:900}.balance span{color:#4674df}
+.play{position:relative;min-height:450px;height:min(60dvh,565px);overflow:hidden;background:radial-gradient(ellipse at 45% 15%,#f8fbff 8%,#d9e6f9 79%,#bccfe9)}
+.light{position:absolute;inset:0;background:linear-gradient(120deg,#fff6 0 10%,transparent 29%),repeating-linear-gradient(90deg,transparent 0 54px,#ffffff24 55px 57px)}
+.room-floor{position:absolute;inset:56% 0 0;background:linear-gradient(#dee8f7,#bdcde4)}
+.cpu{position:absolute;z-index:3;top:23px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px}
+.avatar{width:52px;height:52px;border-radius:50%;background:#f6bf8b;border:4px solid white;box-shadow:0 4px 8px #3d5f9140;position:relative;overflow:hidden}.avatar:before{content:"";position:absolute;left:-5px;top:-10px;width:62px;height:29px;border-radius:50%;background:#3c4e70}.avatar:after{content:"••";position:absolute;top:18px;left:12px;letter-spacing:7px;color:#3b4b66}.cpu b{font-size:11px;background:#395cb0;border-radius:30px;color:white;padding:4px 12px}
+.table-shell{position:absolute;top:26%;left:50%;width:116%;height:65%;transform:translateX(-50%) perspective(750px) rotateX(30deg);border-radius:49% 49% 39% 39%/37% 37% 32% 32%;padding:14px;background:linear-gradient(140deg,#315ba8,#163d82);box-shadow:0 15px 0 #17346f,0 25px 24px #2b4a8073}
+.felt{position:relative;width:100%;height:100%;border:2px solid #a1baf4;border-radius:inherit;background:radial-gradient(ellipse at 50% 25%,#597ce4,#375dbd 65%,#264c9d)}.felt:before{content:"";position:absolute;inset:8%;border:2px solid #b0c6ff65;border-radius:inherit}
+.deck{position:absolute;left:10%;top:14%;width:36px;height:53px;border-radius:5px;background:repeating-linear-gradient(45deg,#557de2 0 4px,#7396f0 4px 8px);border:4px solid #fff;box-shadow:0 4px 0 #1c4293,0 7px 0 #dfe8fa;transform:rotate(-14deg);z-index:2}
+.dealer{position:absolute;left:50%;top:7%;transform:translateX(-50%);display:flex;gap:6px;min-width:108px;justify-content:center}
+.card,.flip-card{position:relative;flex-shrink:0;width:49px;height:72px}
+.card-face,.flip-inner .front,.flip-inner .back{position:absolute;inset:0;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.card-face,.flip-inner .front{background:#fff;border:1px solid #dce4f2;color:#26304a;box-shadow:0 4px 3px #1635726b;font:33px Georgia,serif}
+.card-face.red,.flip-inner .front.red{color:#dc4556}
+.card-face small,.flip-inner .front small{position:absolute;top:4px;left:5px;font:800 13px system-ui}
+.card.back,.flip-inner .back{background:repeating-linear-gradient(45deg,#5379dd 0 5px,#7297ef 5px 10px);border:4px solid white;box-shadow:0 4px 3px #1635726b}
+.flip-card{perspective:700px}.flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s ease}.flip-card.revealed .flip-inner{transform:rotateY(180deg)}.flip-inner .front,.flip-inner .back{backface-visibility:hidden}.flip-inner .front{transform:rotateY(180deg)}
+.lane-row{position:absolute;left:5%;right:5%;top:49%;display:flex;justify-content:space-around;gap:1px}
+.lane{min-width:0;width:24%;border:2px solid transparent;border-radius:13px;background:none;padding:7px 0;display:flex;flex-direction:column;align-items:center;gap:7px;color:#d7e4ff;transition:.25s;cursor:pointer;position:relative}
+.lane .cards{height:78px;display:flex;justify-content:center;align-items:flex-start;position:relative}.lane .cards > *:not(:first-child){margin-left:-24px;transform:translateY(6px)}
+.lane label{font-weight:900;font-size:11px;pointer-events:none}.lane.active{border-color:#ffeb94;background:#ffec841c;transform:translateY(-7px)}.lane.active .cards > *:first-child{transform:translateY(-12px);box-shadow:0 11px 14px #0f2d7599,0 0 0 3px #ffe18f}.lane.active label{color:#ffeb8d}
+.lane.selectable:not(.active){animation:glow 1.9s infinite}.lane.disabled{pointer-events:none;opacity:.82}
+@keyframes glow{50%{background:#ffffff24}}
+.lane .score{font-size:12px;color:#f9e5a3;font-weight:900;min-height:18px}
+.tap-hint{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);background:#ffffffee;padding:8px 13px;border-radius:100px;color:#335cba;font-weight:900;font-size:12px;white-space:nowrap;z-index:5;box-shadow:0 5px 16px #11377740}
+.table-pot{position:absolute;bottom:6%;left:49%;transform:translateX(-50%);background:#143c86e6;border:1px solid #c0cfff7c;color:#fff;border-radius:13px;padding:6px 18px;text-align:center;font-weight:1000;font-size:19px;min-width:84px}.table-pot small{display:block;font-weight:650;font-size:10px;color:#b4cdfb}
+.coin{position:absolute;z-index:4;bottom:23%;left:41%;width:36px;height:12px;border-radius:50%;border:3px solid #ffeab2;background:#f5b641;box-shadow:0 4px #bd7e25,0 8px #ffd577,0 12px #bc7e29;transform:rotate(-20deg);opacity:0;transition:opacity .2s, left .35s ease, bottom .35s ease}
+.lower{padding:13px 15px 20px;display:flex;flex-direction:column;gap:12px;flex:1}
+.heading{display:flex;align-items:center;gap:8px}.round{font-size:11px;background:#dbe8ff;color:#3b64ba;border-radius:6px;font-weight:900;padding:6px 9px}.stage{font-size:12px;color:#7c90b1;font-weight:800}
+.statement{font-size:21px;font-weight:1000;letter-spacing:-.04em;min-height:30px}.desc{font-size:12px;color:#6f809e;line-height:1.6;margin:0;min-height:38px}
+.panel{background:#fff;border-radius:18px;padding:16px;box-shadow:0 6px 23px #4368ac12;min-height:130px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.actions{display:flex;gap:10px}.actions button{min-height:56px;border:0;border-radius:14px;font-weight:900;font-size:15px;flex:1}.primary{background:#4973df;color:#fff;box-shadow:0 4px 0 #3154b2}.secondary{background:#e3edff;color:#3d61ad}.ghost-btn{background:#fff;color:#4968ad;border:1px solid #c9d7f1}
+.chip-row{display:flex;gap:9px;justify-content:space-between;align-items:center}.chip-btn{height:54px;width:54px;border-radius:50%;font-size:14px;font-weight:1000;border:6px dashed #fff;background:#5e84dd;color:white;box-shadow:0 2px 0 #3854a9;position:relative}.chip-btn.active{outline:3px solid #f2bc3d;transform:translateY(-5px)}.chip-btn:nth-child(2){background:#e0a843}.chip-btn:nth-child(3){background:#d55b6e}.chip-btn:nth-child(4){background:#515f80}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center}.results div{padding:12px;background:#eaf1ff;border-radius:13px;font-weight:900}.results strong{display:block;font-size:30px;color:#3d69d6}.result-title{font-size:21px;font-weight:1000;color:#2b9f79}
+.footer{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#8291aa;font-size:11px}.preview{border:0;background:transparent;color:#4a71be;font-weight:900;text-decoration:underline;padding:5px}.status{font-size:11px;text-align:center;color:#7788a5}
+.hidden{display:none!important}
+.flying{position:fixed;z-index:999;pointer-events:none;transition:transform .38s ease, left .38s ease, top .38s ease, opacity .2s ease}
+.flash{animation:flash .45s ease}@keyframes flash{50%{filter:brightness(1.25) drop-shadow(0 0 12px #fff5b6)}}
+.bounce{animation:bounce .42s ease}@keyframes bounce{0%{transform:translateY(0)}50%{transform:translateY(-10px)}100%{transform:translateY(0)}}
+@media(max-width:380px){.play{min-height:420px;height:56dvh}.table-shell{width:125%;height:67%}.card,.flip-card{width:41px;height:61px}.card-face,.flip-inner .front{font-size:27px}.lane .cards{height:66px}.lane .cards > *:not(:first-child){margin-left:-21px}.chip-btn{width:47px;height:47px;font-size:12px}.statement{font-size:19px}}
+
+.board-dealer-score{position:absolute;z-index:8;top:105px;left:50%;transform:translateX(-50%);background:#fff;color:#3155a7;border:2px solid #9bbafa;padding:7px 16px;border-radius:30px;font-weight:1000;font-size:18px;box-shadow:0 5px 15px #253e7e50;white-space:nowrap}
+.board-dealer-score[hidden],.board-outcome[hidden]{display:none}
+.board-outcome{position:absolute;z-index:11;top:43%;left:50%;transform:translate(-50%,-50%);width:min(88%,370px);padding:16px 12px;text-align:center;background:#fffffff5;border:3px solid #ffdd79;border-radius:18px;box-shadow:0 15px 35px #112d7773;animation:resultpop .45s cubic-bezier(.2,1.5,.4,1) both}
+.board-outcome strong{display:block;font-size:31px;color:#1f4795;letter-spacing:-.04em}
+.board-outcome .score-line{font-size:17px;font-weight:900;margin-top:6px}
+.board-outcome .result-sub{font-size:12px;color:#58729b;margin-top:6px}
+@keyframes resultpop{from{opacity:0;transform:translate(-50%,-40%) scale(.7)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.lane .score{min-height:23px;display:grid;place-items:center;border-radius:20px;padding:2px 5px}
+.lane.active .score:not(:empty){background:#fff;color:#2554b6!important;border:2px solid #fdd968;font-size:17px;min-width:50px;box-shadow:0 4px 10px #0a2c8059}
+.lane:not(.active) .score{font-size:10px;color:#c9d8ff}
+.board-message{position:absolute;z-index:8;bottom:8%;left:50%;transform:translateX(-50%);padding:7px 12px;border-radius:20px;background:#ffffffeb;color:#375bb1;font-weight:900;font-size:12px;white-space:nowrap;max-width:90%;text-align:center}
+.board-message[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="head">
+    <div>
+      <div class="brand">KABU <em>TABLE</em></div>
+      <div class="meta">ANIMATED PROTOTYPE · v02</div>
+    </div>
+    <div class="balance">チップ <span id="balance">1,000</span></div>
+  </header>
+  <main>
+    <section class="play" id="play">
+      <div class="light"></div>
+      <div class="room-floor"></div>
+      <div class="cpu"><div class="avatar"></div><b>親 · CPU</b></div>
+      <div class="table-shell">
+        <div class="felt">
+          <div class="deck" id="deck"></div>
+          <div class="dealer" id="dealer"></div>
+          <div class="lane-row" id="laneRow"></div>
+          <div class="coin" id="coin"></div>
+          <div class="table-pot"><small>BET</small><span id="pot">0</span></div>
+        </div>
+      </div>
+      <div class="board-dealer-score" id="dealerScore" hidden></div><div class="board-outcome" id="boardOutcome" hidden></div><div class="board-message" id="boardMessage" hidden></div><div class="tap-hint hidden" id="hint">場のカードを選択</div>
+    </section>
+    <div class="lower">
+      <section class="panel">
+        <div class="heading"><span class="round" id="round">ROUND 01</span><span class="stage" id="stage">スタート</span></div>
+        <div class="statement" id="statement">カードを配って開始します</div>
+        <p class="desc" id="desc">山札から1枚ずつ配られます。配り終わると、賭けたい札を選べます。</p>
+        <div class="results hidden" id="results"></div>
+      </section>
+      <div class="chip-row hidden" id="chips"></div>
+      <div class="actions" id="actions"></div>
+      <div class="footer"><span>配る・引く・めくる演出入り試作</span><button class="preview" id="restart">最初から</button></div>
+      <div class="status">まだ試作です。配札・ドロー・親の公開の流れを確認するためのバージョンです。</div>
+    </div>
+  </main>
+</div>
 <script>
-(function(){'use strict';
-const $=id=>document.getElementById(id), suits=['♠','♥','♦','♣'], face=r=>r===1?'A':String(r), betOptions=[10,20,30,50,100,150,200,300,500], startChips=1000;
-let chips=startChips,round=1,betIndex=4,phase='idle',deck=[],lanes=[[],[],[],[]],dealer=[],selected=-1,stake=0,result=null,roundTimer=null;
-function shuffle(){deck=[];for(let s=0;s<4;s++)for(let r=1;r<=10;r++)deck.push({r,s});for(let i=deck.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}}
-function take(){if(!deck.length)throw Error('山札がなくなりました');return deck.pop()}
-function score(cards){return cards.reduce((n,c)=>n+c.r,0)%10}
-function role(cards,isDealer){if(cards.length===2){let nums=cards.map(c=>c.r);if(isDealer&&nums.includes(1)&&nums.includes(9))return {type:'kuppin',name:'クッピン',mult:1};if(!isDealer&&nums.includes(1)&&nums.includes(4))return {type:'mippin',name:'ミッピン',mult:3}}if(cards.length===3){let nums=cards.map(c=>c.r);if(nums.every(n=>n===nums[0]))return {type:'arashi',name:'嵐',mult:[1,3,5,10].includes(nums[0])?10:5};let sr=[...cards].sort((a,b)=>a.r-b.r);if(sr.every(c=>c.s===sr[0].s)&&sr[1].r===sr[0].r+1&&sr[2].r===sr[1].r+1)return {type:'shuntsu',name:'順子',mult:5}}return {type:'normal',name:score(cards)+'点',mult:1}}
-function cardHTML(c,hidden=false){if(hidden)return '<span class="playing-card back" aria-label="裏向きのカード"></span>';return '<span class="playing-card '+([1,2].includes(c.s)?'red':'')+'" aria-label="'+face(c.r)+suits[c.s]+'"><span class="corner">'+face(c.r)+'</span>'+suits[c.s]+'</span>'}
-function tell(title,message){$('title').textContent=title;$('message').textContent=message}
-const phaseIndex={idle:0,pick:0,bet:1,decide:3,result:4},stepLabels=['札を選ぶ','賭ける','追加配札','引くか決定','結果'];function render(){const idx=phaseIndex[phase];$('steps').innerHTML=stepLabels.map((label,i)=>'<div class="step '+(i===idx?'current':i<idx?'past':'')+'"><b>'+(i<idx?'✓':i+1)+'</b>'+label+'</div>').join('');$('actionStep').textContent=phase==='idle'?'ゲームの準備':phase==='pick'?'STEP 1 / 5　札を選択':phase==='bet'?'STEP 2 / 5　賭け点を決定':phase==='decide'?'STEP 4 / 5　カードを引くか判断':'STEP 5 / 5　勝敗結果';$('actionGuide').textContent=({idle:'下のボタンからスタート',pick:selected<0?'中央の4枚から1枚をタップ':'黄色く光った札を確認して次へ',bet:'− と ＋ で賭け点を調整',decide:'2枚で止めるか、3枚目を引くか選択',result:'勝敗を確認して次のラウンドへ'})[phase];$('tableHint').hidden=!(phase==='pick'&&selected<0);$('tableHint').textContent='↑ 場1〜4をタップして選択'; $('balance').textContent=chips;$('round').textContent='ROUND '+round;$('pot').textContent=stake;
-$('dealerCards').innerHTML=dealer.map(c=>cardHTML(c,phase!=='result')).join('')||cardHTML(null,true);
-$('lanes').innerHTML=lanes.map((cards,i)=>'<button type="button" class="lane '+(selected===i?'active ':'')+(phase==='pick'?'pickable':'')+'" data-lane="'+i+'" '+(phase==='pick'?'':'disabled')+' aria-label="場札'+(i+1)+'">'+ '<span class="lane-name">'+(selected===i?'選択中':'場 '+(i+1))+'</span><span class="cards">'+cards.map(c=>cardHTML(c)).join('')+'</span><span class="lane-score">'+(phase==='result'||phase==='decide'||phase==='bet'||phase==='pick'?score(cards)+'点':'　')+'</span></button>').join('');
-$('bets').hidden=phase!=='bet';$('choices').hidden=phase!=='decide';$('betValue').textContent=betOptions[betIndex];$('minus').disabled=betIndex===0;$('plus').disabled=betIndex===betOptions.length-1;$('draw').disabled=selected<0||lanes[selected].length>=3;
-$('primary').hidden=phase==='decide';$('primary').textContent=({idle:'ゲームをスタート',pick:'選んだ札で次へ →',bet:'この賭け点で配札 →',result:'次のラウンドへ →'})[phase]||'進む';$('primary').disabled=phase==='pick'&&selected<0||phase==='bet'&&betOptions[betIndex]>chips;
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const suits=['♠','♥','♦','♣'];
+const red=s=>s===1||s===2;
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+const fmt=n=>n.toLocaleString('ja-JP');
+const roundData={
+  lanes:[[{n:'A',s:0}],[{n:'4',s:2}],[{n:'8',s:1}],[{n:'2',s:3}]],
+  second:[{n:'3',s:0},{n:'7',s:1},{n:'6',s:2},{n:'5',s:3}],
+  third:{n:'2',s:2},
+  dealer:[{n:'9',s:0},{n:'8',s:2}]
+};
+const state={phase:'idle',round:1,balance:1000,selected:null,bet:50,drew:false,busy:false,counts:[0,0,0,0],dealerCount:0,revealed:0,generation:0};
+function cardValue(n){return n==='A'?1:Number(n)}
+function handScore(cards){return cards.reduce((sum,c)=>sum+cardValue(c.n),0)%10}
+function createFace(card){const redClass=red(card.s)?' red':'';return `<div class="card-face${redClass}"><small>${card.n}</small>${suits[card.s]}</div>`}
+function staticCard(card){const div=document.createElement('div');div.className='card';div.innerHTML=createFace(card);return div}
+function backCard(){const div=document.createElement('div');div.className='card back';return div}
+function flipCard(card,revealed=false){const div=document.createElement('div');div.className='flip-card'+(revealed?' revealed':'');div.innerHTML=`<div class="flip-inner"><div class="back"></div><div class="front${red(card.s)?' red':''}"><small>${card.n}</small>${suits[card.s]}</div></div>`;return div}
+function laneCards(index){const cards=[];if(state.counts[index]>=1)cards.push(roundData.lanes[index][0]);if(state.counts[index]>=2)cards.push(roundData.second[index]);if(state.counts[index]>=3)cards.push(roundData.third);return cards}
+function selectedScorePreview(){return state.selected==null?null:handScore(laneCards(state.selected))}
+function renderDealer(){const dealer=$('#dealer');dealer.replaceChildren();for(let i=0;i<state.dealerCount;i++)dealer.append(flipCard(roundData.dealer[i],i<state.revealed));}
+function renderLanes(){const laneRow=$('#laneRow');laneRow.innerHTML='';
+ for(let i=0;i<4;i++){
+   const lane=document.createElement('button');lane.className='lane';
+   if(state.phase==='select')lane.classList.add('selectable'); else lane.classList.add('disabled');
+   if(state.selected===i)lane.classList.add('active');
+   lane.dataset.lane=i;
+   const cards=laneCards(i);
+   const score=(i===state.selected && cards.length>=2 && ['decide','draw3','reveal','result'].includes(state.phase))?handScore(cards):'';
+   lane.innerHTML=`<label>場 ${i+1}</label><div class="cards"></div><div class="score">${score!==''?score+'点':''}</div>`;
+   const cardsEl=lane.querySelector('.cards');
+   cards.forEach(card=>cardsEl.append(staticCard(card)));
+   if(state.phase==='select') lane.onclick=()=>{if(state.busy)return; state.selected=i; render();};
+   laneRow.append(lane);
+ }
 }
-function reset(){if(roundTimer){clearTimeout(roundTimer);roundTimer=null}chips=startChips;round=1;phase='idle';lanes=[[],[],[],[]];dealer=[];selected=-1;stake=0;result=null;betIndex=4;tell('カブに挑戦！','4枚の場札から1枚選んで、合計9点に近づけましょう。');render()}
-function deal(){shuffle();lanes=Array.from({length:4},()=>[take()]);dealer=[take()];selected=-1;stake=0;phase='pick';tell('まず、場の4枚から1枚選んでください','青い卓の「場1〜4」をタップしてください。選択すると黄色く光ります。');render()}
-function confirmPick(){if(selected<0)return;phase='bet';tell('次は賭け点を決めます','画面下の − と ＋ で賭け点を設定し、青いボタンで2枚目を配ります。');render()}
-function second(){let amount=betOptions[betIndex];if(amount>chips)return;chips-=amount;stake=amount;lanes.forEach(l=>l.push(take()));dealer.push(take());phase='decide';const r=role(lanes[selected],false);tell('2枚目を配りました：'+r.name,'「引かない」は2枚で勝負。「もう1枚引く」は選んだ札に3枚目を配ります。');render()}
-function compare(){let player=lanes[selected],p=role(player,false),d=role(dealer,true),ps=score(player),ds=score(dealer),won=false,tie=false,mult=p.mult;
-if(d.type==='kuppin'){won=false}else if(p.type==='mippin'||p.type==='arashi'||p.type==='shuntsu'){won=true}else if(d.type==='arashi'||d.type==='shuntsu'){won=false}else if(ps===ds){tie=true}else won=ps>ds;
-if(tie){chips+=stake;tell('引き分け：'+ps+'点','賭けた '+stake+' チップを返却しました。')}else if(won){let gain=stake*mult;chips+=stake+gain;tell('勝利！ +'+gain+' チップ','あなた '+p.name+'（'+ps+'点） ／ 親 '+d.name+'（'+ds+'点）')}else{tell('敗北 −'+stake+' チップ','あなた '+p.name+'（'+ps+'点） ／ 親 '+d.name+'（'+ds+'点）')}
-result={won,tie};phase='result';render()}
-function conclude(extra){if(extra&&lanes[selected].length<3)lanes[selected].push(take());const dr=role(dealer,true);if(dr.type!=='kuppin'&&score(dealer)<=5&&dealer.length<3)dealer.push(take());compare()}
-$('lanes').addEventListener('click',e=>{const b=e.target.closest('[data-lane]');if(!b||phase!=='pick')return;selected=Number(b.dataset.lane);tell('場 '+(selected+1)+' の '+face(lanes[selected][0].r)+suits[lanes[selected][0].s]+' を選択しました','黄色く光っている札が賭ける札です。変更したい場合は別の札を押してください。');render()});
-$('primary').addEventListener('click',()=>{if(phase==='idle')deal();else if(phase==='pick')confirmPick();else if(phase==='bet')second();else if(phase==='result'){round++;if(chips<10){chips=startChips;tell('チップを補充しました','新しいラウンドを始めます。')}deal()}});
-$('minus').addEventListener('click',()=>{betIndex=Math.max(0,betIndex-1);render()});$('plus').addEventListener('click',()=>{betIndex=Math.min(betOptions.length-1,betIndex+1);render()});$('stop').addEventListener('click',()=>conclude(false));$('draw').addEventListener('click',()=>conclude(true));$('reset').addEventListener('click',reset);render();
-})();
+function renderChips(){const wrap=$('#chips');wrap.innerHTML='';[10,50,100,500].forEach(n=>{const b=document.createElement('button');b.className='chip-btn'+(state.bet===n?' active':'');b.textContent=n;b.onclick=()=>{if(state.busy)return; state.bet=n; render();};wrap.append(b)});}
+function setText(stage,statement,desc){$('#stage').textContent=stage;$('#statement').textContent=statement;$('#desc').textContent=desc}
+function showActions(list){const wrap=$('#actions');wrap.innerHTML='';list.forEach(item=>{const b=document.createElement('button');b.className=item.kind;b.textContent=item.label;b.disabled=!!item.disabled;b.onclick=item.onClick;wrap.append(b);});}
+function moveCoinToSelected(show=true){const coin=$('#coin');if(state.selected==null||!show){coin.style.opacity='0';return;} const lane=$$('.lane')[state.selected]; if(!lane)return; const play=$('#play').getBoundingClientRect(); const r=lane.getBoundingClientRect(); coin.style.left=((r.left-play.left)+r.width/2-18)+'px'; coin.style.bottom=(play.bottom-r.bottom+58)+'px'; coin.style.opacity='1';}
+function render(){ $('#balance').textContent=fmt(state.balance); $('#round').textContent=`ROUND ${String(state.round).padStart(2,'0')}`; $('#pot').textContent=(state.phase==='bet'||state.phase==='deal2'||state.phase==='decide'||state.phase==='draw3'||state.phase==='reveal'||state.phase==='result')?state.bet:0; renderDealer(); renderLanes();
+ const dealerScore=$('#dealerScore'), outcome=$('#boardOutcome'), boardMessage=$('#boardMessage');
+ dealerScore.hidden=state.revealed===0; dealerScore.textContent=state.revealed?('親 '+handScore(roundData.dealer.slice(0,state.revealed))+'点'):'';
+ outcome.hidden=state.phase!=='result';
+ boardMessage.hidden=!['select','decide'].includes(state.phase);
+ boardMessage.textContent=state.phase==='select'?'↓ 4枚から賭ける札をタップ':state.phase==='decide'?'自分の札の点数を確認して選択':'';
+ if(state.phase==='result'){
+  const a=handScore(laneCards(state.selected)), b=handScore(roundData.dealer), verdict=a===b?'引き分け':a>b?'あなたの勝ち！':'親の勝ち';
+  outcome.innerHTML='<strong>'+verdict+'</strong><div class="score-line">あなた '+a+'点　対　親 '+b+'点</div><div class="result-sub">'+(a===b?'賭け点は返却':a>b?'+'+state.bet+' チップ':'−'+state.bet+' チップ')+'</div>';
+ }
+ $('#results').classList.add('hidden'); $('#chips').classList.add('hidden'); $('#hint').classList.add('hidden'); moveCoinToSelected(state.phase!=='idle'&&state.phase!=='deal1'&&state.phase!=='select'?true:false);
+ switch(state.phase){
+   case 'idle':
+     setText('スタート','カードを配って開始します','山札から1枚ずつ配られます。配り終わると、賭けたい札を選べます。');
+     showActions([{label:'カードを配る','kind':'primary',onClick:startRound}]);
+     break;
+   case 'deal1':
+     setText('配札中','カードを配っています…','まず場に4枚、続いて親に1枚配ります。');
+     showActions([{label:'配札中…','kind':'ghost-btn',disabled:true,onClick:()=>{}}]);
+     break;
+   case 'select':
+     $('#hint').classList.remove('hidden');
+     setText('札の選択',state.selected==null?'どの札に賭けますか？':`場 ${state.selected+1} に賭けますか？`,state.selected==null?'4枚の中から1枚タップしてください。':`選んだ札が浮き上がります。この札でよければ次へ進みます。`);
+     showActions([{label:'この札で賭ける','kind':'primary',disabled:state.selected==null,onClick:()=>{state.phase='bet'; render();}}]);
+     break;
+   case 'bet':
+     $('#chips').classList.remove('hidden'); renderChips();
+     setText('BET',`${state.bet}チップを賭けます`,`チップを選んで確定すると、全ての場に2枚目を配ります。`);
+     showActions([{label:`${state.bet}チップを賭ける`,kind:'primary',onClick:betAndDealSecond}]);
+     break;
+   case 'deal2':
+     setText('追加配札中','2枚目を配っています…','場4か所と親にカードが追加されます。');
+     showActions([{label:'配札中…','kind':'ghost-btn',disabled:true,onClick:()=>{}}]);
+     break;
+   case 'decide':
+     const preview=selectedScorePreview();
+     setText('追加判断','引きますか？','選択中の札に現在の点数を表示しています。');
+     showActions([
+       {label:'この点数で勝負','kind':'secondary',onClick:()=>revealDealer(false)},
+       {label:'もう1枚引く','kind':'primary',onClick:()=>drawThird()}
+     ]);
+     break;
+   case 'draw3':
+     setText('ドロー中','カードを引いています…','選んだ札に3枚目を追加します。');
+     showActions([{label:'ドロー中…','kind':'ghost-btn',disabled:true,onClick:()=>{}}]);
+     break;
+   case 'reveal':
+     setText('公開中','親のカードを公開しています…','1枚ずつめくって結果を表示します。');
+     showActions([{label:'公開中…','kind':'ghost-btn',disabled:true,onClick:()=>{}}]);
+     break;
+   case 'result':
+     const playerCards=laneCards(state.selected); const player=handScore(playerCards); const dealer=handScore(roundData.dealer); const win=player>dealer; const tie=player===dealer; let title=tie?'引き分け':win?'あなたの勝ち！':'CPUの勝ち'; let color=tie?'#5b73a8':win?'#2b9f79':'#d76060';
+     setText('結果','勝敗が決まりました','結果はテーブル上に表示しています。');
+     const results=$('#results'); results.classList.add('hidden');
+     showActions([{label:'次のラウンドへ','kind':'primary',onClick:resetRound}]);
+     break;
+ }
+}
+async function animateDealTo(targetEl,cardHtml,token){
+ const from=$('#deck').getBoundingClientRect(),to=targetEl.getBoundingClientRect();
+ const fly=document.createElement('div');fly.className='flying';fly.style.left=from.left+'px';fly.style.top=from.top+'px';fly.innerHTML=cardHtml;document.body.append(fly);
+ await delay(25);if(token!==state.generation){fly.remove();return false}
+ fly.style.left=(to.left+(to.width-49)/2)+'px';fly.style.top=to.top+'px';fly.style.transform='rotate(5deg)';
+ await delay(420);fly.remove();return token===state.generation;
+}
+async function startRound(){if(state.busy)return;state.busy=true;const token=++state.generation;state.phase='deal1';state.selected=null;state.drew=false;state.counts=[0,0,0,0];state.dealerCount=0;state.revealed=0;render();await delay(120);
+ for(let i=0;i<4;i++){if(!await animateDealTo($$('.lane .cards')[i],'<div class="card back"></div>',token))return;state.counts[i]=1;renderLanes();await delay(115)}
+ if(!await animateDealTo($('#dealer'),'<div class="card back"></div>',token))return;state.dealerCount=1;renderDealer();await delay(200);if(token!==state.generation)return;state.phase='select';state.busy=false;render();}
+async function betAndDealSecond(){if(state.busy||state.bet>state.balance)return;state.busy=true;const token=state.generation;state.phase='deal2';state.balance-=state.bet;render();await delay(150);
+ for(let i=0;i<4;i++){if(!await animateDealTo($$('.lane .cards')[i],'<div class="card back"></div>',token))return;state.counts[i]=2;renderLanes();await delay(115)}
+ if(!await animateDealTo($('#dealer'),'<div class="card back"></div>',token))return;state.dealerCount=2;renderDealer();await delay(200);if(token!==state.generation)return;state.phase='decide';state.busy=false;render();}
+async function drawThird(){if(state.busy)return;state.busy=true;state.drew=true;const token=state.generation;state.phase='draw3';render();await delay(150);if(!await animateDealTo($$('.lane .cards')[state.selected],'<div class="card back"></div>',token))return;state.counts[state.selected]=3;renderLanes();await delay(350);if(token!==state.generation)return;state.busy=false;await revealDealer(true);}
+async function revealDealer(withDraw){if(state.busy)return;state.busy=true;const token=state.generation;state.drew=withDraw;state.phase='reveal';state.revealed=0;render();await delay(300);
+ for(let i=0;i<state.dealerCount;i++){if(token!==state.generation)return;const target=$$('#dealer .flip-card')[i];if(target)target.classList.add('revealed');await delay(680);if(token!==state.generation)return;state.revealed=i+1;}
+ state.phase='result';state.busy=false;const a=handScore(laneCards(state.selected)),b=handScore(roundData.dealer);if(a>=b)state.balance+=a===b?state.bet:state.bet*2;render();}
+function resetRound(){state.generation++;state.busy=false;state.phase='idle';state.selected=null;state.bet=50;state.drew=false;state.counts=[0,0,0,0];state.dealerCount=0;state.revealed=0;state.round++;render();}
+$('#restart').onclick=()=>{state.generation++;state.phase='idle';state.round=1;state.balance=1000;state.selected=null;state.bet=50;state.drew=false;state.busy=false;state.counts=[0,0,0,0];state.dealerCount=0;state.revealed=0;render();};
+render();
 </script></body></html>
