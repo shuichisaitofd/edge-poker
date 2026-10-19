@@ -59,7 +59,7 @@
     if (testMode) return;
     try {
       const b = parseInt(localStorage.getItem('kabu.boss'), 10);
-      if (b > 0 && b <= BOSS_PURSE) S.boss = b;
+      if (b > 0 && b < 10000000) S.boss = b;
       S.runRounds = parseInt(localStorage.getItem('kabu.runRounds'), 10) || 0;
     } catch (e) { /* ignore */ }
   }
@@ -150,6 +150,7 @@
     field.addEventListener('pointerdown', e => {
       if (e.target.closest('.sound')) return;
       if (document.getElementById('cutin').classList.contains('on')) FX.endCut();
+      if (document.getElementById('jackpot').classList.contains('on')) FX.endJackpot();
       if (S.busy) fast = true;
     });
     renderSound();
@@ -200,7 +201,7 @@
       if (S.coin) { mode = 'bet'; text = 'BET ' + fmt(S.coin) + '円を確定'; enabled = !S.busy; }
       else { mode = 'hint'; text = '金額を選んでください'; }
     } else if (st === 'decide') { mode = 'decide'; }
-    else if (st === 'result') { mode = 'next'; text = S.cleared ? 'もう一度あきに挑む' : S.purse < 5 ? '…次の日' : '次の勝負'; enabled = !S.busy; }
+    else if (st === 'result') { mode = 'next'; text = (S.cleared || S.purse < 5) ? '…次の日' : '次の勝負'; enabled = !S.busy; }
     slot.dataset.mode = mode;
     slotBtn.textContent = text;
     slotBtn.disabled = !enabled;
@@ -339,7 +340,16 @@
     if (run !== S.run) return;
     S.busy = false;
     setStage('decide');
-    FX.omen('zawa', pick(['ざわ…ざわ…', 'ざわ…', '…ざわ…']), 1200);
+    teaseOrZawa();
+  }
+
+  const isNine = cards => { const r = R.evaluate(cards, false); return r.type === 'normal' && r.score === 9; };
+  /** 手札が9になったら「激アツ」予告(パチンコ風)。それ以外は「ざわ…」 */
+  function teaseOrZawa() {
+    if (S.picked >= 0 && isNine(S.lanes[S.picked])) {
+      A.play('chance'); FX.shake(2); FX.flash();
+      FX.omen('nine', pick(['激アツ！！', '来たァ…ッ！', '9だ…ッ！']), 1500);
+    } else FX.omen('zawa', pick(['ざわ…ざわ…', 'ざわ…', '…ざわ…']), 1200);
   }
 
   async function decide(hit) {
@@ -353,6 +363,7 @@
       FX.omen('zawa', 'ざわッ…！', 900);
       await dealTo({ lane: S.picked }, true);
       if (run !== S.run) return;
+      if (isNine(S.lanes[S.picked])) teaseOrZawa();
       await sleep(380);
     }
     setStage('dealer');
@@ -400,6 +411,7 @@
     }
     S.last = j;
     if (j.outcome === 'win') S.boss -= j.profit;
+    else if (j.outcome === 'lose') S.boss += S.stake;          // 負けた掛け金はあきの持ち金になる
     const cleared = S.boss <= 0;
     await sleep(380);
     if (run !== S.run) return;
@@ -407,6 +419,8 @@
     const special = j.player.type !== 'normal' || j.dealer.type === 'kuppin' || cleared;
     if (j.outcome === 'win') {
       const txt = cleared ? '完全勝利！' : j.player.type !== 'normal' ? j.player.name + '！' : '勝ち！';
+      const nine = j.player.type === 'normal' && j.player.score === 9 && !cleared;
+      if (nine) { await FX.jackpot(timeScale); if (run !== S.run) return; }
       A.play(special ? 'big' : 'win');
       FX.shake(special ? 2 : 1);
       if (cleared) FX.shout('俺の4,000円がァ…！', 'tl');
@@ -452,16 +466,23 @@
     a.finished.then(() => { if (S.stage === 'result') laneChipEls[S.picked] && laneChipEls[S.picked].replaceChildren(); }).catch(() => {});
   }
 
-  /** 持ち金が尽きた: 暗転 → 「次の日」 → 焼きまんじゅうを奢ってもらった。BAD END → 再挑戦ボタン */
-  async function badEnd() {
+  /** エンディング: 暗転 →「次の日」→ 写真+一言 → BAD END / GOOD END → 再挑戦ボタン
+   *  bad = 持ち金が尽きた(あきに焼きまんじゅうを奢ってもらう) / good = あきを倒した(あきに焼きまんじゅうをおごる) */
+  async function ending(kind) {
     const be = $('badend');
     fast = false;
-    stats.badEnds++; stats.streak = 0; saveStats();
+    be.dataset.kind = kind;
+    $('beImg').src = kind === 'good' ? 'assets/clear.webp' : 'assets/yakimanju.webp';
+    $('beCap').innerHTML = kind === 'good' ? '巻き上げた4000円で、<br>あきに焼きまんじゅうをおごってやった。' : 'この群馬の焼きまんじゅうを<br>あきに奢ってもらった。';
+    $('beStamp').textContent = kind === 'good' ? 'GOOD END' : 'BAD END';
+    if (kind === 'bad') stats.badEnds++;
+    stats.streak = kind === 'bad' ? 0 : stats.streak;
+    saveStats();
     be.classList.remove('s-day', 's-scene', 's-stamp', 's-btn');
     be.hidden = false;
     void be.offsetWidth;
     be.classList.add('on');
-    A.play('lose');
+    A.play(kind === 'good' ? 'win' : 'lose');
     await sleep(900);
     be.classList.add('s-day');
     await sleep(1900);
@@ -469,7 +490,7 @@
     await sleep(600);
     be.classList.add('s-scene');
     await sleep(1500);
-    be.classList.add('s-stamp'); A.play('impact'); FX.shake(2);
+    be.classList.add('s-stamp'); A.play(kind === 'good' ? 'big' : 'impact'); FX.shake(2);
     await sleep(1100);
     be.classList.add('s-btn');
     await new Promise(res => { $('beBtn').onclick = () => { $('beBtn').onclick = null; res(); }; });
@@ -483,7 +504,8 @@
   async function next() {
     if (S.busy || S.stage !== 'result') return;
     S.busy = true;
-    if (S.purse < 5) await badEnd();
+    if (S.cleared) await ending('good');
+    else if (S.purse < 5) await ending('bad');
     document.querySelectorAll('.card').forEach(c => {
       c.animate([{ opacity: 1 }, { opacity: 0, transform: getComputedStyle(c).transform + ' translateY(-10px)' }],
         { duration: 220 * timeScale, fill: 'forwards' });

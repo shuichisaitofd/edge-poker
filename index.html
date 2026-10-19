@@ -13,6 +13,7 @@
 <script>if(/[?&](seed|test)=/.test(location.search)&&!/[?&]title=1/.test(location.search))document.documentElement.classList.add("skip-title")</script>
 <link rel="preload" as="image" href="assets/title.webp">
 <link rel="prefetch" as="image" href="assets/yakimanju.webp">
+<link rel="prefetch" as="image" href="assets/clear.webp">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -65,6 +66,13 @@
     </section>
 
     <div class="omen" id="omen" aria-hidden="true"><span class="omen-l"></span><span class="omen-r"></span><span class="omen-c"></span></div>
+    <div class="jackpot" id="jackpot" aria-hidden="true">
+      <div class="jp-rays"></div>
+      <p class="jp-top">激アツ</p>
+      <div class="jp-reels"><span class="reel">9</span><span class="reel">9</span><span class="reel">9</span></div>
+      <p class="jp-main">カブ！！</p>
+      <p class="jp-sub">大 当 た り</p>
+    </div>
     <div class="cutin" id="cutin" data-kind="win" aria-hidden="true"><div class="cutin-lines"></div><div class="cutin-band"><span id="cutinText"></span><small id="cutinSub"></small></div></div>
     <div class="stats" id="stats" hidden>
       <div class="stats-sheet" role="dialog" aria-label="戦績">
@@ -96,12 +104,12 @@
     </div>
   </div>
 
-  <!-- BAD END: 持ち金が尽きた翌日 -->
-  <div class="badend" id="badend" hidden aria-live="polite">
+  <!-- BAD END(持ち金が尽きた翌日)/ GOOD END(あきを倒した翌日) -->
+  <div class="badend" id="badend" data-kind="bad" hidden aria-live="polite">
     <p class="be-day" id="beDay">次の日</p>
     <figure class="be-scene" id="beScene">
-      <img src="assets/yakimanju.webp" alt="群馬の焼きまんじゅう" draggable="false">
-      <figcaption>この群馬の焼きまんじゅうを<br>あきに奢ってもらった。</figcaption>
+      <img id="beImg" src="assets/yakimanju.webp" alt="群馬の焼きまんじゅう" draggable="false">
+      <figcaption id="beCap">この群馬の焼きまんじゅうを<br>あきに奢ってもらった。</figcaption>
     </figure>
     <p class="be-stamp" id="beStamp">BAD END</p>
     <button class="title-btn be-btn" id="beBtn" type="button">もう一度あきに挑む</button>

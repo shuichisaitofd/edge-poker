@@ -75,6 +75,13 @@
     lose(t) { tone(t, 'sine', 240, 100, 0.55, 0.28); noiseHit(t, 0.2, 'lowpass', 700, 200, 0.6, 0.1); },
     rumble(t) { tone(t, 'sawtooth', 48, 40, 1.4, 0.2, 0.5); tone(t, 'sine', 62, 46, 1.4, 0.3, 0.6); noiseHit(t, 1.4, 'lowpass', 200, 420, 0.7, 0.16); },
     impact(t) { S.drum(t); noiseHit(t, 0.35, 'lowpass', 1800, 120, 0.6, 0.35); tone(t, 'square', 90, 40, 0.3, 0.2); },
+    chance(t) { S.drum(t); S.drum(t + 0.22); tone(t + 0.1, 'sawtooth', 220, 880, 0.5, 0.12); },
+    jackpot(t) {
+      S.drum(t); S.drum(t + 0.3); S.drum(t + 0.6);
+      for (let i = 0; i < 16; i++) { const f = 523.25 * Math.pow(2, [0, 4, 7, 12][i % 4] / 12) * (i > 7 ? 2 : 1); tone(t + 0.1 + i * 0.075, 'triangle', f, f, 0.2, 0.12); };
+      for (let i = 0; i < 14; i++) S.coin(t + 1.4 + i * 0.11);
+    },
+    reel(t) { tone(t, 'square', 1400, 1300, 0.04, 0.05); },
     push(t) { tone(t, 'triangle', 440, 440, 0.18, 0.12); tone(t + 0.14, 'triangle', 440, 440, 0.2, 0.1); }
   };
 

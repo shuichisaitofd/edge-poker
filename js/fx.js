@@ -62,6 +62,7 @@
     if (!o) return;
     clearTimeout(omenTimer);
     o.dataset.kind = kind;
+    o.dataset.text = kind === 'nine' ? text : '';
     o.querySelector('.omen-c').textContent = kind === 'zawa' ? text : '';
     const gogo = kind === 'gogo' ? text : '';
     o.querySelector('.omen-l').textContent = gogo;
@@ -105,5 +106,45 @@
     d.animate([{ opacity: .9 }, { opacity: 0 }], { duration: 260, easing: 'ease-out' }).finished.then(() => d.remove()).catch(() => d.remove());
   }
 
-  Kabu.fx = { cutin, endCut, shake, shout, omen, omenOff, rumble, release, flash, reduce };
+  /** 9(カブ)が出た時のパチンコ風「大当たり」: 虹の背景+リール9-9-9+コイン噴出。タップでスキップ可。 */
+  let jpResolve = null, jpTimers = [], jpIv = [];
+  function jackpot(ts) {
+    const el = $('jackpot'), f = $('field');
+    if (!el) return Promise.resolve();
+    ts = ts || 1;
+    const A = Kabu.audio;
+    const reels = Array.from(el.querySelectorAll('.reel'));
+    el.classList.remove('on', 'hit'); void el.offsetWidth; el.classList.add('on');
+    reels.forEach(r => { r.classList.remove('stop'); r.textContent = '7'; });
+    A.play('jackpot'); flash();
+    jpIv = reels.map(r => setInterval(() => { r.textContent = String(Math.floor(Math.random() * 10)); A.play('reel'); }, 70));
+    const at = (ms, fn) => jpTimers.push(setTimeout(fn, ms * ts));
+    reels.forEach((r, i) => at(1000 + i * 520, () => {
+      clearInterval(jpIv[i]); r.textContent = '9'; r.classList.add('stop'); A.play('impact'); shake(1);
+    }));
+    at(2100, () => { el.classList.add('hit'); shake(3); flash(); coinRain(f, ts); });
+    return new Promise(res => { jpResolve = res; jpTimers.push(setTimeout(endJackpot, (reduce ? 900 : 4300) * ts)); });
+  }
+  function endJackpot() {
+    jpTimers.forEach(clearTimeout); jpTimers = []; jpIv.forEach(clearInterval); jpIv = [];
+    const el = $('jackpot'); if (el) el.classList.remove('on', 'hit');
+    if (jpResolve) { const r = jpResolve; jpResolve = null; r(); }
+  }
+  function coinRain(f, ts) {
+    if (reduce) return;
+    const fr = f.getBoundingClientRect();
+    for (let i = 0; i < 34; i++) {
+      const c = document.createElement('img');
+      c.src = 'assets/coin-' + [5, 10, 100, 500][i % 4] + '.webp';
+      c.className = 'rain-coin'; c.alt = ''; c.draggable = false;
+      const sz = 30 + Math.random() * 26;
+      c.style.cssText = 'left:' + (Math.random() * (fr.width - sz)).toFixed(0) + 'px;top:-60px;width:' + sz.toFixed(0) + 'px;height:' + sz.toFixed(0) + 'px';
+      f.appendChild(c);
+      const dur = (1500 + Math.random() * 1200) * ts;
+      c.animate([{ transform: 'translateY(0) rotate(0deg)', opacity: 1 }, { transform: 'translateY(' + (fr.height + 120) + 'px) rotate(' + (360 + Math.random() * 540).toFixed(0) + 'deg)', opacity: 1 }],
+        { duration: dur, delay: Math.random() * 900 * ts, easing: 'cubic-bezier(.4,.1,.8,.6)', fill: 'both' }).finished.then(() => c.remove()).catch(() => c.remove());
+    }
+  }
+
+  Kabu.fx = { jackpot, endJackpot, cutin, endCut, shake, shout, omen, omenOff, rumble, release, flash, reduce };
 })();
