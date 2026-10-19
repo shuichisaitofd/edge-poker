@@ -331,6 +331,29 @@ def scenario_boss(b):
     check('[ボス] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
     pg.context.close()
 
+def scenario_reset(b):
+    """リセット: 戦績シートから「最初からやり直す」(2回タップ)。進行中でも破棄して初期状態へ。"""
+    pg = new_page(b, 390, 844, 6)
+    start_and_pick(pg, 2, 100)
+    pg.locator('#slotBtn').tap(); wait_stage(pg, 'decide')
+    before = snap(pg)
+    pg.locator('#scoreBtn').tap()
+    pg.locator('#resetRun').tap()
+    check('[リセット] 1回目のタップは確認表示だけで実行されない', pg.inner_text('#resetRun') == 'もう一度タップで実行' and snap(pg)['stake'] == before['stake'] == 100)
+    pg.locator('#resetRun').tap()
+    pg.wait_for_function("window.__kabu.snapshot().stage==='idle'")
+    s = snap(pg)
+    check('[リセット] 2回目で初期化(持ち金1,000・あき4,000・卓は空・シート閉)', s['purse'] == 1000 and s['boss'] == 4000 and s['stake'] == 0 and s['picked'] == -1 and pg.evaluate("document.querySelectorAll('.card').length") == 0 and not pg.is_visible('#stats'), json.dumps(s)[:200])
+    check('[リセット] ボタン表示が元に戻る', True)
+    pg.touchscreen.tap(60, 520); wait_stage(pg, 'pick')
+    check('[リセット] リセット後にそのまま配札できる', snap(pg)['stage'] == 'pick' and pg.evaluate("document.querySelectorAll('.card').length") == 5)
+    pg.wait_for_timeout(400)
+    pg.locator('#scoreBtn').tap()
+    pg.locator('#resetStats').tap(); pg.locator('#resetStats').tap()
+    check('[リセット] 戦績を消すとスコア0・シートは開いたまま', pg.inner_text('#scoreVal') == '0' and pg.is_visible('#stats'))
+    check('[リセット] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
+    pg.context.close()
+
 def scenario_nine(b):
     """自分が9で勝つ: 手札が9になった時に激アツ予告、勝ちで大当たり(9-9-9リール)演出。"""
     pg = new_page(b, 390, 844, 4)
@@ -460,6 +483,7 @@ if __name__ == '__main__':
         scenario_rules(b)
         scenario_title(b)
         scenario_boss(b)
+        scenario_reset(b)
         scenario_nine(b)
         scenario_bankrupt(b)
         scenario_desktop(b)

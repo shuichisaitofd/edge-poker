@@ -94,6 +94,33 @@
     $('scoreVal').textContent = fmt(stats.score);
     if (bump) { const t = $('scoreBtn'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); }
   }
+  /** 2回タップで実行(誤操作防止。ブラウザの確認ダイアログは使わない) */
+  function armed(btn, label, fn) {
+    let t = 0;
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('armed')) { clearTimeout(t); btn.classList.remove('armed'); btn.textContent = label; fn(); return; }
+      btn.classList.add('armed'); btn.textContent = 'もう一度タップで実行';
+      t = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = label; }, 3000);
+    });
+  }
+  /** 進行中の勝負も含めて破棄し、持ち金1,000円・あき4,000円・卓を空にして最初から(戦績は残す) */
+  function resetRun() {
+    S.run++; S.busy = false; fast = false;
+    FX.endCut(); FX.endJackpot(); FX.omenOff(); FX.release();
+    document.querySelectorAll('.card, .shout, .rain-coin').forEach(c => c.remove());
+    laneChipEls.forEach(e => e.replaceChildren());
+    S.lanes = [[], [], [], []]; S.dealer = []; S.deck = [];
+    S.picked = -1; S.coin = 0; S.stake = 0; S.cleared = false; S.last = null;
+    S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0;
+    savePurse(); hideVerdict(); showDealerScore(null);
+    $('stats').hidden = true;
+    setStage('idle');
+    renderBoss(true);
+  }
+  function resetStats() {
+    stats = Object.assign({}, STAT0);
+    saveStats(); renderScore(true); openStats();
+  }
   function openStats() {
     const rows = [['あきから回収', stats.clears + ' 回'], ['BAD END', stats.badEnds + ' 回'], ['最短クリア', stats.bestClear ? stats.bestClear + ' 戦' : '―'], ['スコア', fmt(stats.score) + ' 点'], ['勝ち / 負け / 引分', stats.wins + ' / ' + stats.losses + ' / ' + stats.pushes],
       ['連勝(最高)', stats.bestStreak + ' 連勝'], ['最高持ち金', fmt(stats.bestPurse) + ' 円'], ['最高配当', fmt(stats.maxWin) + ' 円']];
@@ -141,6 +168,8 @@
     });
     $('scoreBtn').addEventListener('click', () => { A.play('tap'); openStats(); });
     $('statsClose').addEventListener('click', () => { $('stats').hidden = true; });
+    armed($('resetRun'), '最初からやり直す', resetRun);
+    armed($('resetStats'), '戦績を消す', resetStats);
     $('stats').addEventListener('click', e => { if (e.target === $('stats')) $('stats').hidden = true; });
     slotBtn.addEventListener('click', onSlot);
     standBtn.addEventListener('click', () => decide(false));

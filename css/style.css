@@ -490,3 +490,9 @@ button:disabled { cursor: default; }
 .rain-coin { position: absolute; z-index: 65; pointer-events: none; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .5)); }
 
 @media (prefers-reduced-motion: reduce) { .jp-rays, .jp-top, .omen[data-kind="nine"]::after { animation: none; } }
+
+/* ---- リセット(2回タップで実行) ---- */
+.stats-actions { display: grid; gap: 8px; margin-top: 14px; }
+.stats-reset { border: 0; padding: .6em 1em; border-radius: 3px; font: 800 14px / 1.2 var(--ff); letter-spacing: .1em; color: var(--ink); background: #d8c7a0 url(../assets/paper.webp) center / 100% 100%; box-shadow: inset 0 0 0 1px rgba(70, 44, 22, .5), 0 2px 3px rgba(0, 0, 0, .35); }
+.stats-reset.armed { color: #f7ebcf; background: var(--shu); box-shadow: inset 0 0 0 2px rgba(247, 235, 207, .45), 0 3px 0 #4a120a; }
+.stats-actions + .stats-close { margin-top: 12px; }
