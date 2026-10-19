@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>旅館カブ</title>
 <link rel="preload" as="image" href="assets/bg.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@600;800&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -14,6 +17,7 @@
   <div class="field" id="field" data-stage="idle">
 
     <div class="topbar">
+      <button class="tag score-tag" id="scoreBtn" type="button" aria-label="戦績を見る">SCORE <b id="scoreVal">0</b></button>
       <button class="sound" id="sound" type="button" aria-label="効果音 オン/オフ" aria-pressed="false"></button>
     </div>
 
@@ -30,6 +34,7 @@
     </section>
 
     <section class="zone zone-mid" aria-live="polite">
+      <div class="start-hint" id="startHint">画面をタップで配る</div>
       <div class="verdict off" id="verdict">
         <strong id="verdictTitle"></strong>
         <span id="verdictSub"></span>
@@ -56,7 +61,15 @@
       </div>
     </section>
 
-    <div class="cutin" id="cutin" data-kind="win" aria-hidden="true"><div class="cutin-band"><span id="cutinText"></span></div></div>
+    <div class="omen" id="omen" aria-hidden="true"><span class="omen-l"></span><span class="omen-r"></span><span class="omen-c"></span></div>
+    <div class="cutin" id="cutin" data-kind="win" aria-hidden="true"><div class="cutin-lines"></div><div class="cutin-band"><span id="cutinText"></span><small id="cutinSub"></small></div></div>
+    <div class="stats" id="stats" hidden>
+      <div class="stats-sheet" role="dialog" aria-label="戦績">
+        <h2>戦績</h2>
+        <dl id="statsList"></dl>
+        <button type="button" class="stats-close" id="statsClose">とじる</button>
+      </div>
+    </div>
   </div>
 </main>
 <noscript><p style="color:#fff;text-align:center">JavaScriptを有効にしてください。</p></noscript>

@@ -73,6 +73,8 @@
       [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(t + 0.2 + i * 0.08, 'triangle', f, f, 0.42, 0.16));
     },
     lose(t) { tone(t, 'sine', 240, 100, 0.55, 0.28); noiseHit(t, 0.2, 'lowpass', 700, 200, 0.6, 0.1); },
+    rumble(t) { tone(t, 'sawtooth', 48, 40, 1.4, 0.2, 0.5); tone(t, 'sine', 62, 46, 1.4, 0.3, 0.6); noiseHit(t, 1.4, 'lowpass', 200, 420, 0.7, 0.16); },
+    impact(t) { S.drum(t); noiseHit(t, 0.35, 'lowpass', 1800, 120, 0.6, 0.35); tone(t, 'square', 90, 40, 0.3, 0.2); },
     push(t) { tone(t, 'triangle', 440, 440, 0.18, 0.12); tone(t + 0.14, 'triangle', 440, 440, 0.2, 0.1); }
   };
 

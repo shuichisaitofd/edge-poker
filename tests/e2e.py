@@ -4,7 +4,7 @@
 前提: リポジトリ直下で `python3 -m http.server 8765` が動いていること。
 各チェックは PASS/FAIL を出力し、1件でも FAIL なら終了コード 1。
 """
-import argparse, json, sys, os, itertools
+import re, argparse, json, sys, os, itertools
 from playwright.sync_api import sync_playwright
 
 ap = argparse.ArgumentParser()
@@ -37,6 +37,8 @@ def new_page(b, w, h, seed, touch=True):
     TOUCH[0] = touch
     ctx = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=2 if touch else 1,
                         is_mobile=touch, has_touch=touch)
+    # Webフォント(外部CDN)はテスト環境から取得できないため空応答にする(フォントはフォールバックで検証)
+    ctx.route(re.compile(r'https://fonts\.(googleapis|gstatic)\.com/.*'), lambda r: r.fulfill(status=200, body='', content_type='text/css'))
     pg = ctx.new_page()
     pg.errors = []
     pg.on('console', lambda m: pg.errors.append(m.text) if m.type == 'error' else None)
@@ -217,10 +219,25 @@ def scenario_flow(b, w, h, label=None):
     check(f'{tag} 飛行中の札は常に1枚以内', pg.evaluate('window.__maxFly') <= 1, str(pg.evaluate('window.__maxFly')))
     # 次の勝負
     tap(pg, '#slotBtn')
-    wait_stage(pg, 'idle')
+    wait_stage(pg, 'pick')
     s = snap(pg)
-    check(f'{tag} 次の勝負で卓が空に', s['lanes'] == [[],[],[],[]] and pg.evaluate("document.querySelectorAll('.card').length") == 0 and not pg.is_visible('#verdict'))
+    check(f'{tag} 次の勝負は押すだけで自動配札(前の札は消え新しい5枚)', s['round'] == 2 and pg.evaluate("document.querySelectorAll('.card').length") == 5 and not pg.is_visible('#verdict') and s['picked'] == -1, json.dumps(s)[:200])
     check(f'{tag} コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
+    pg.context.close()
+
+def scenario_tapdeal(b):
+    """山札を狙わなくても、畳の何もない所をタップすれば配られる。戦績シートは配札を起動しない。"""
+    pg = new_page(b, 390, 844, 3)
+    check('[タップ配札] 初期に配札ヒントが見える', pg.is_visible('#startHint'))
+    pg.locator('#scoreBtn').tap()
+    check('[タップ配札] 戦績シートが開く・配札は始まらない', pg.is_visible('#stats') and snap(pg)['stage'] == 'idle')
+    pg.locator('#statsClose').tap()
+    check('[タップ配札] 戦績シートが閉じる', not pg.is_visible('#stats') and snap(pg)['stage'] == 'idle')
+    pg.touchscreen.tap(60, 520)     # 左の畳(UIなし)
+    wait_stage(pg, 'pick')
+    check('[タップ配札] 畳タップで配札(場4+親1)', snap(pg)['stage'] == 'pick' and pg.evaluate("document.querySelectorAll('.card').length") == 5)
+    check('[タップ配札] 配札後はヒント非表示', not pg.is_visible('#startHint'))
+    check('[タップ配札] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
     pg.context.close()
 
 def scenario_rules(b):
@@ -261,7 +278,7 @@ def scenario_bankrupt(b):
     s = snap(pg)
     if s['purse'] < 5:
         check('[破産] 5円未満なら「1,000円でもう一度」が出る', pg.inner_text('#slotBtn') == '1,000円でもう一度')
-        tap(pg, '#slotBtn'); wait_stage(pg, 'idle')
+        tap(pg, '#slotBtn'); wait_stage(pg, 'pick')
         check('[破産] 1,000円で再開', snap(pg)['purse'] == 1000)
     else:
         check('[破産] (この種では勝ち/引き分けのため破産経路は未発生: 持ち金>=5)', True)
@@ -336,6 +353,7 @@ if __name__ == '__main__':
         for wh in [x for x in args.extra.split(',') if x]:
             ew, eh = [int(v) for v in wh.split('x')]
             scenario_flow(b, ew, eh, label=f'{ew}x{eh}')
+        scenario_tapdeal(b)
         scenario_timing(b)
         scenario_rules(b)
         scenario_bankrupt(b)

@@ -55,6 +55,38 @@
     try { localStorage.setItem('kabu.purse', String(S.purse)); } catch (e) { /* ignore */ }
   }
 
+  // ---------------------------------------------------------------- 戦績(スコア = 勝って得た配当の累計。負けても減らない)
+  const STAT0 = { score: 0, wins: 0, losses: 0, pushes: 0, streak: 0, bestStreak: 0, bestPurse: START_PURSE, maxWin: 0 };
+  let stats = Object.assign({}, STAT0);
+  function loadStats() {
+    if (testMode) return;
+    try { const o = JSON.parse(localStorage.getItem('kabu.stats')); if (o && typeof o === 'object') stats = Object.assign({}, STAT0, o); } catch (e) { /* ignore */ }
+  }
+  function saveStats() {
+    if (testMode) return;
+    try { localStorage.setItem('kabu.stats', JSON.stringify(stats)); } catch (e) { /* ignore */ }
+  }
+  function recordResult(j) {
+    if (j.outcome === 'win') {
+      stats.wins++; stats.streak++; stats.bestStreak = Math.max(stats.bestStreak, stats.streak);
+      stats.score += j.delta; stats.maxWin = Math.max(stats.maxWin, j.delta);
+    } else if (j.outcome === 'lose') { stats.losses++; stats.streak = 0; }
+    else stats.pushes++;
+    stats.bestPurse = Math.max(stats.bestPurse, S.purse);
+    saveStats();
+    renderScore(true);
+  }
+  function renderScore(bump) {
+    $('scoreVal').textContent = fmt(stats.score);
+    if (bump) { const t = $('scoreBtn'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); }
+  }
+  function openStats() {
+    const rows = [['スコア', fmt(stats.score) + ' 点'], ['勝ち / 負け / 引分', stats.wins + ' / ' + stats.losses + ' / ' + stats.pushes],
+      ['連勝(最高)', stats.bestStreak + ' 連勝'], ['最高持ち金', fmt(stats.bestPurse) + ' 円'], ['最高配当', fmt(stats.maxWin) + ' 円']];
+    $('statsList').innerHTML = rows.map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
+    $('stats').hidden = false;
+  }
+
   // ---------------------------------------------------------------- DOM 構築(1回だけ)
   function build() {
     const lanes = $('lanes');
@@ -88,6 +120,14 @@
       coinEls[a] = b;
     }
     deckBtn.addEventListener('click', start);
+    // 山札を狙わなくても、畳のどこをタップしても配れる
+    field.addEventListener('click', e => {
+      if (S.stage !== 'idle' || e.target.closest('.sound, .score-tag, .stats')) return;
+      start();
+    });
+    $('scoreBtn').addEventListener('click', () => { A.play('tap'); openStats(); });
+    $('statsClose').addEventListener('click', () => { $('stats').hidden = true; });
+    $('stats').addEventListener('click', e => { if (e.target === $('stats')) $('stats').hidden = true; });
     slotBtn.addEventListener('click', onSlot);
     standBtn.addEventListener('click', () => decide(false));
     hitBtn.addEventListener('click', () => decide(true));
@@ -284,6 +324,7 @@
     if (run !== S.run) return;
     S.busy = false;
     setStage('decide');
+    FX.omen('zawa', pick(['ざわ…ざわ…', 'ざわ…', '…ざわ…']), 1200);
   }
 
   async function decide(hit) {
@@ -293,7 +334,8 @@
     S.busy = true;
     if (hit) {
       setStage('hitting');
-      FX.shout(pick(['もう一枚いくのか！', 'おっ、攻めるねぇ', '欲張るなよ〜']), pick(['tl', 'bl']));
+      FX.shout(pick(['まだ行くのか！', '攻めるねぇ…', '欲張るなッ！']), pick(['tl', 'bl']));
+      FX.omen('zawa', 'ざわッ…！', 900);
       await dealTo({ lane: S.picked }, true);
       if (run !== S.run) return;
       await sleep(380);
@@ -314,18 +356,23 @@
   async function revealDealer(run) {
     const cards = Array.from(dealerHandEl.querySelectorAll('.card'));
     for (let k = 0; k < cards.length; k++) {
-      if (k === cards.length - 1 && cards.length > 1) {   // 最後の1枚は溜める
-        FX.shout(pick(['…どうだ！？', '来るぞ…', 'ごくり…']), pick(['bl', 'br']));
-        await sleep(760);
+      const last = k === cards.length - 1;
+      let rumbled = false;
+      if (last) {                                          // 最後の1枚: ゴゴゴ…と拡大・振動して溜める
+        rumbled = true;
+        FX.shout(pick(['…どうだ！？', '来るぞ…ッ', 'ごくり…']), pick(['bl', 'br']));
+        FX.omen('gogo', 'ゴゴゴゴゴ', 1800 * timeScale + 300);
+        A.play('rumble');
+        await FX.rumble(cards[k], 1700 * timeScale * (fast ? 0.4 : 1));
       } else {
         await sleep(300);
       }
-      if (run !== S.run) return;
+      if (run !== S.run) { FX.release(); return; }
       cards[k].dataset.face = 'up';
-      A.play('flip');
+      if (rumbled) { FX.release(); A.play('impact'); FX.shake(2); } else A.play('flip');
       await sleep(560);
       const part = S.dealer.slice(0, k + 1);
-      showDealerScore('親 ' + (k === cards.length - 1 ? handText(S.dealer, true) : R.score(part) + '点'), true);
+      showDealerScore('親 ' + (last ? handText(S.dealer, true) : R.score(part) + '点'), true);
       await sleep(360);
     }
   }
@@ -341,15 +388,15 @@
     if (j.outcome === 'win') {
       const txt = j.player.type !== 'normal' ? j.player.name + '！' : '勝ち！';
       A.play(special ? 'big' : 'win');
-      FX.shake();
+      FX.shake(special ? 2 : 1);
       if (special) FX.shout(pick(['おおおっ！', 'マジかよ！', 'やりやがった！']), pick(['tl', 'bl', 'br']));
-      await FX.cutin(txt, special ? 'special' : 'win');
+      await FX.cutin(txt, special ? 'special' : 'win', special ? pick(['天運…ッ！', '圧倒的…ッ！', '引き当てたァ…！']) : pick(['読みどおり…！', '勝負あり！', 'もらったッ！']));
     } else if (j.outcome === 'lose') {
       const txt = j.dealer.type === 'kuppin' ? 'クッピン！' : '負け…';
       A.play('lose');
       if (j.dealer.type !== 'normal') FX.shake();
-      FX.shout(pick(['惜しいなぁ', 'ドンマイ！', 'ははは、親の勝ちだ']), pick(['bl', 'br']));
-      await FX.cutin(txt, j.dealer.type === 'kuppin' ? 'special' : 'lose');
+      FX.shout(pick(['惜しいなぁ…', 'ドンマイッ！', 'ククク…親の勝ちだ']), pick(['bl', 'br']));
+      await FX.cutin(txt, j.dealer.type === 'kuppin' ? 'special' : 'lose', pick(['ぐぬぬ…', '不覚ッ…！', '地獄…ッ！']));
     } else {
       A.play('push');
     }
@@ -357,6 +404,7 @@
 
     S.purse += j.returned;
     savePurse();
+    recordResult(j);
     const pt = j.player.type === 'normal' ? j.player.score + '点' : j.player.name;
     const dt = j.dealer.type === 'normal' ? j.dealer.score + '点' : j.dealer.name;
     const money = j.delta > 0 ? '＋' + fmt(j.delta) + '円' : j.delta < 0 ? '−' + fmt(-j.delta) + '円' : '±0円';
@@ -396,13 +444,14 @@
     fast = false;
     S.busy = false;
     setStage('idle');
+    start();                                   // 次の勝負は押した瞬間にそのまま配る
   }
 
   // ---------------------------------------------------------------- 起動 / テスト用フック
   function snapshot() {
     const landed = sel => Array.from(document.querySelectorAll(sel)).filter(c => c.dataset.state === 'landed').length;
     return {
-      stage: S.stage, busy: S.busy, purse: S.purse, stake: S.stake, picked: S.picked, coin: S.coin,
+      stage: S.stage, busy: S.busy, round: S.round, purse: S.purse, stake: S.stake, picked: S.picked, coin: S.coin,
       deckLeft: S.deck.length,
       lanes: S.lanes.map(l => l.map(c => c.id)),
       dealer: S.dealer.map(c => c.id),
@@ -428,5 +477,6 @@
 
   build();
   S.purse = loadPurse();
+  loadStats(); renderScore(false);
   setStage('idle');
 })();
