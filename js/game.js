@@ -14,6 +14,7 @@
   const seedParam = params.get('seed');
   const rnd = seedParam !== null ? R.mulberry32(parseInt(seedParam, 10) || 0) : Math.random;
   const testMode = seedParam !== null || params.has('test');
+  const persist = !testMode || params.has('persist');   // テストは保存しない(?persist=1 で保存の検証だけ有効化)
   // 見た目だけのランダム(札の傾き・一言)。?seed= のときは固定してスクリーンショット比較を決定的にする
   const cos = seedParam !== null ? R.mulberry32((parseInt(seedParam, 10) || 0) + 777) : Math.random;
   const timeScale = FX.reduce ? 0.2 : (parseFloat(params.get('speed')) || 1);
@@ -44,7 +45,7 @@
 
   // ---------------------------------------------------------------- 永続化(持ち金のみ)
   function loadPurse() {
-    if (testMode) return START_PURSE;
+    if (!persist) return START_PURSE;
     try {
       const v = parseInt(localStorage.getItem('kabu.purse'), 10);
       if (v >= 5 && v < 10000000) return v;
@@ -52,14 +53,17 @@
     return START_PURSE;
   }
   function savePurse() {
-    if (testMode) return;
+    if (!persist) return;
     try { localStorage.setItem('kabu.purse', String(S.purse)); localStorage.setItem('kabu.boss', String(S.boss)); localStorage.setItem('kabu.runRounds', String(S.runRounds)); } catch (e) { /* ignore */ }
   }
+  /** 保存された挑戦を復元。持ち金が尽きた(BAD END途中で閉じた等)/あきを倒した後の保存は、最初の状態に戻す */
   function loadBoss() {
-    if (testMode) return;
+    if (!persist) return;
     try {
+      const p = parseInt(localStorage.getItem('kabu.purse'), 10);
       const b = parseInt(localStorage.getItem('kabu.boss'), 10);
-      if (b > 0 && b < 10000000) S.boss = b;
+      if (!(p >= 5) || !(b > 0) || b >= 10000000) { S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0; savePurse(); return; }
+      S.boss = b;
       S.runRounds = parseInt(localStorage.getItem('kabu.runRounds'), 10) || 0;
     } catch (e) { /* ignore */ }
   }
@@ -73,11 +77,11 @@
   const STAT0 = { badEnds: 0, clears: 0, bestClear: 0, score: 0, wins: 0, losses: 0, pushes: 0, streak: 0, bestStreak: 0, bestPurse: START_PURSE, maxWin: 0 };
   let stats = Object.assign({}, STAT0);
   function loadStats() {
-    if (testMode) return;
+    if (!persist) return;
     try { const o = JSON.parse(localStorage.getItem('kabu.stats')); if (o && typeof o === 'object') stats = Object.assign({}, STAT0, o); } catch (e) { /* ignore */ }
   }
   function saveStats() {
-    if (testMode) return;
+    if (!persist) return;
     try { localStorage.setItem('kabu.stats', JSON.stringify(stats)); } catch (e) { /* ignore */ }
   }
   function recordResult(j) {
@@ -500,33 +504,42 @@
   async function ending(kind) {
     const be = $('badend');
     fast = false;
-    be.dataset.kind = kind;
-    $('beImg').src = kind === 'good' ? 'assets/end-good.webp' : 'assets/end-bad.webp';
-    $('beStamp').textContent = kind === 'good' ? 'GOOD END' : 'BAD END';
-    if (kind === 'bad') stats.badEnds++;
-    stats.streak = kind === 'bad' ? 0 : stats.streak;
-    saveStats();
-    be.classList.remove('s-day', 's-scene', 's-stamp', 's-btn');
-    be.hidden = false;
-    void be.offsetWidth;
-    be.classList.add('on');
-    A.play(kind === 'good' ? 'win' : 'lose');
-    await sleep(900);
-    be.classList.add('s-day');
-    await sleep(1900);
-    be.classList.remove('s-day');
-    await sleep(600);
-    be.classList.add('s-scene');
-    await sleep(1500);
-    be.classList.add('s-stamp'); A.play(kind === 'good' ? 'big' : 'impact'); FX.shake(2);
-    await sleep(1100);
-    be.classList.add('s-btn');
-    await new Promise(res => { $('beBtn').onclick = () => { $('beBtn').onclick = null; res(); }; });
-    A.play('coin');
-    be.classList.remove('on');
-    await sleep(500);
-    be.hidden = true;
-    be.classList.remove('s-day', 's-scene', 's-stamp', 's-btn');
+    let skipping = false;
+    const esleep = ms => skipping ? Promise.resolve() : sleep(ms);
+    const onSkip = () => { if (!be.classList.contains('s-btn')) skipping = true; };
+    be.addEventListener('pointerdown', onSkip);
+    try {
+      be.dataset.kind = kind;
+      $('beImg').src = kind === 'good' ? 'assets/end-good.webp' : 'assets/end-bad.webp';
+      $('beCap').innerHTML = kind === 'good' ? '巻き上げた4000円で、<br>あきに焼きまんじゅうを<br>おごってやった。' : 'この群馬の焼きまんじゅうを<br>あきに奢ってもらった。';
+      $('beStamp').textContent = kind === 'good' ? 'GOOD END' : 'BAD END';
+      if (kind === 'bad') stats.badEnds++;
+      stats.streak = kind === 'bad' ? 0 : stats.streak;
+      saveStats();
+      be.classList.remove('s-day', 's-scene', 's-stamp', 's-btn');
+      be.hidden = false;
+      void be.offsetWidth;
+      be.classList.add('on');
+      A.play(kind === 'good' ? 'win' : 'lose');
+      await esleep(900);
+      be.classList.add('s-day');
+      await esleep(1900);
+      be.classList.remove('s-day');
+      await esleep(600);
+      be.classList.add('s-scene');
+      await esleep(1800);
+      be.classList.add('s-stamp'); A.play(kind === 'good' ? 'big' : 'impact'); FX.shake(2);
+      await esleep(1100);
+      be.classList.add('s-btn');
+      await new Promise(res => { $('beBtn').onclick = () => { $('beBtn').onclick = null; res(); }; });
+      A.play('coin');
+      be.classList.remove('on');
+      await sleep(500);
+    } finally {            // 途中で例外が出ても、画面と状態が固まらないようにする
+      be.removeEventListener('pointerdown', onSkip);
+      be.hidden = true;
+      be.classList.remove('on', 's-day', 's-scene', 's-stamp', 's-btn');
+    }
   }
 
   async function next() {

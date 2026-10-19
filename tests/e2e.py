@@ -276,7 +276,7 @@ def scenario_title(b):
     pg.on('pageerror', lambda e: pg.errors.append('PAGEERROR ' + str(e)))
     pg.goto(f'{BASE}?title=1&seed=2&speed=0.4')
     pg.wait_for_selector('#titleBtn')
-    check('[スタート画面] タイトル「あきの忘れた4000円を奪え。」・副題「旅館カブ」・ボタン', ''.join(pg.inner_text('.title-logo').split()) == 'あきの忘れた4000円を奪え。' and pg.inner_text('.title-sub') == '旅館カブ' and pg.inner_text('#titleBtn') == 'あきから4000円を奪う')
+    check('[スタート画面] タイトル「あきの忘れた4000円を奪え。」・英語の副題・ボタン', ''.join(pg.inner_text('.title-logo').split()) == 'あきの忘れた4000円を奪え。' and '4000 yen' in pg.inner_text('.title-sub') and pg.inner_text('#titleBtn') == 'あきから4000円を奪う')
     check('[スタート画面] 背景の上でも卓の札はまだ操作不可(オーバーレイ)', pg.evaluate("document.elementFromPoint(195, 420).closest('#title') !== null"))
     pg.wait_for_timeout(1800)
     shot(pg, 'title_00_start')
@@ -354,6 +354,19 @@ def scenario_reset(b):
     check('[リセット] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
     pg.context.close()
 
+def scenario_persist(b):
+    """保存の復元: 持ち金が尽きた状態が残っていても、再訪時は持ち金1,000・あき4,000に戻る"""
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    ctx.route(re.compile(r'https://fonts\.(googleapis|gstatic)\.com/.*'), lambda r: r.fulfill(status=200, body='', content_type='text/css'))
+    ctx.add_init_script("if(!sessionStorage.getItem('i')){sessionStorage.setItem('i','1');localStorage.setItem('kabu.purse','0');localStorage.setItem('kabu.boss','4600');localStorage.setItem('kabu.runRounds','7');}")
+    pg = ctx.new_page(); pg.errors = []
+    pg.on('pageerror', lambda e: pg.errors.append(str(e)))
+    pg.goto(f'{BASE}?seed=2&persist=1&speed=0.4')
+    pg.wait_for_function('window.__kabu')
+    s = snap(pg)
+    check('[保存] 負け状態が残っていても初期値(1,000/4,000)から', s['purse'] == 1000 and s['boss'] == 4000, json.dumps(s)[:160])
+    ctx.close()
+
 def scenario_nine(b):
     """自分が9で勝つ: 手札が9になった時に激アツ予告、勝ちで大当たり(9-9-9リール)演出。"""
     pg = new_page(b, 390, 844, 4)
@@ -400,6 +413,7 @@ def scenario_bankrupt(b):
     check('[BAD END] スマホで見返す写真(縦長の1枚絵 end-bad)を表示', src.endswith('assets/end-bad.webp') and pg.evaluate("document.getElementById('beImg').naturalWidth") > 0 and pg.evaluate("document.getElementById('beImg').naturalHeight > document.getElementById('beImg').naturalWidth"), src)
     pg.wait_for_function("document.getElementById('badend').classList.contains('s-btn')", timeout=10000)
     pg.wait_for_timeout(900)
+    check('[BAD END] 一言の文字が写真の下に出る', '焼きまんじゅう' in pg.inner_text('#beCap') and pg.evaluate("getComputedStyle(document.getElementById('beCap')).opacity") == '1')
     check('[BAD END] BAD END表示と再挑戦ボタン', pg.inner_text('#beStamp') == 'BAD END' and pg.inner_text('#beBtn') == 'もう一度あきに挑む')
     shot(pg, 'badend_1_end')
     pg.locator('#beBtn').tap()
@@ -484,6 +498,7 @@ if __name__ == '__main__':
         scenario_title(b)
         scenario_boss(b)
         scenario_reset(b)
+        scenario_persist(b)
         scenario_nine(b)
         scenario_bankrupt(b)
         scenario_desktop(b)
