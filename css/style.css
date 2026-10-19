@@ -417,3 +417,28 @@ button:disabled { cursor: default; }
 @media (prefers-reduced-motion: reduce) {
   .title-logo, .title-btn, .load-main { animation: none; }
 }
+
+/* ---- BAD END(翌日の焼きまんじゅう) ---- */
+.badend { position: absolute; inset: 0; z-index: 110; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #000; opacity: 0; transition: opacity .8s ease; padding: 0 6%; }
+.badend[hidden] { display: none; }
+.badend.on { opacity: 1; }
+.be-day {
+  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); margin: 0; white-space: nowrap; opacity: 0;
+  font: 400 clamp(34px, calc(var(--sw) * .12), 62px) / 1 var(--ff-impact); letter-spacing: .5em; padding-left: .5em; color: #efe3c4;
+  text-shadow: 0 0 18px rgba(255, 240, 200, .35);
+  transition: opacity 1s ease;
+}
+.badend.s-day .be-day { opacity: 1; }
+.be-scene { margin: 0; width: min(100%, 420px); opacity: 0; transform: scale(.96); transition: opacity 1s ease, transform 1.6s ease; }
+.be-scene img { display: block; width: 100%; border: 6px solid #eadbb6; box-shadow: 0 8px 28px rgba(0, 0, 0, .8); }
+.be-scene figcaption { margin-top: 14px; text-align: center; white-space: nowrap; font: 800 clamp(15px, calc(var(--sw) * .05), 22px) / 1.7 var(--ff); letter-spacing: .1em; color: #f1e3c4; }
+.badend.s-scene .be-scene { opacity: 1; transform: none; }
+.be-stamp {
+  margin: 0; font: 400 clamp(40px, calc(var(--sw) * .14), 72px) / 1 var(--ff-impact); letter-spacing: .08em; color: #d23a22;
+  -webkit-text-stroke: 6px #140a05; paint-order: stroke fill; text-shadow: 4px 5px 0 #4a120a;
+  opacity: 0; transform: rotate(-6deg) scale(2.6);
+}
+.badend.s-stamp .be-stamp { animation: stamp .45s cubic-bezier(.2, 1.3, .4, 1) forwards; }
+@keyframes stamp { 0% { opacity: 0; transform: rotate(-6deg) scale(2.6); } 60% { opacity: 1; transform: rotate(-6deg) scale(.94); } 100% { opacity: 1; transform: rotate(-6deg) scale(1); } }
+.be-btn { animation: none; opacity: 0; pointer-events: none; transition: opacity .6s; }
+.badend.s-btn .be-btn { opacity: 1; pointer-events: auto; }

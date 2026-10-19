@@ -327,20 +327,33 @@ def scenario_boss(b):
     pg.context.close()
 
 def scenario_bankrupt(b):
+    """持ち金が尽きる → 「次の日」→ 焼きまんじゅう BAD END → 再挑戦(持ち金1,000円・あき4,000円)。"""
     pg = new_page(b, 390, 844, 9)
-    pg.evaluate('window.__kabu.setPurse(5)')
-    start_and_pick(pg, 0, 5)
-    pg.locator('#slotBtn').tap()
-    wait_stage(pg, 'decide')
-    pg.locator('#standBtn').tap()
-    wait_stage(pg, 'result', 60000)
+    pg.evaluate('window.__kabu.setPurse(100)')
+    pg.evaluate('window.__kabu.setBoss(2500)')
+    stack(pg, [3, 17, 5, 6, 1, 4, 18, 2, 7, 9])      # クッピン負けの並び
+    start_and_pick(pg, 1, 100)
+    pg.locator('#slotBtn').tap(); wait_stage(pg, 'decide')
+    pg.locator('#standBtn').tap(); wait_stage(pg, 'result', 60000)
     s = snap(pg)
-    if s['purse'] < 5:
-        check('[破産] 5円未満なら「1,000円でもう一度」が出る', pg.inner_text('#slotBtn') == '1,000円でもう一度')
-        tap(pg, '#slotBtn'); wait_stage(pg, 'pick')
-        check('[破産] 1,000円で再開', snap(pg)['purse'] == 1000)
-    else:
-        check('[破産] (この種では勝ち/引き分けのため破産経路は未発生: 持ち金>=5)', True)
+    check('[BAD END] 負けて持ち金0円', s['purse'] == 0 and s['last']['outcome'] == 'lose', json.dumps(s['last'], ensure_ascii=False)[:120])
+    check('[BAD END] スロット=「…次の日」', pg.inner_text('#slotBtn') == '…次の日')
+    pg.locator('#slotBtn').tap()
+    pg.wait_for_function("document.getElementById('badend').classList.contains('s-day')", timeout=10000)
+    check('[BAD END] 「次の日」と暗転', pg.inner_text('#beDay') == '次の日' and pg.evaluate("getComputedStyle(document.getElementById('badend')).backgroundColor") == 'rgb(0, 0, 0)')
+    shot(pg, 'badend_0_day')
+    pg.wait_for_function("document.getElementById('badend').classList.contains('s-scene')", timeout=10000)
+    cap = pg.inner_text('#beScene figcaption').replace('\n', '')
+    check('[BAD END] 焼きまんじゅうの写真と「奢ってもらった。」', cap == 'この群馬の焼きまんじゅうをあきに奢ってもらった。' and pg.evaluate("document.querySelector('#beScene img').naturalWidth") > 0, cap)
+    pg.wait_for_function("document.getElementById('badend').classList.contains('s-btn')", timeout=10000)
+    pg.wait_for_timeout(900)
+    check('[BAD END] BAD END表示と再挑戦ボタン', pg.inner_text('#beStamp') == 'BAD END' and pg.inner_text('#beBtn') == 'もう一度あきに挑む')
+    shot(pg, 'badend_1_end')
+    pg.locator('#beBtn').tap()
+    wait_stage(pg, 'pick')
+    s = snap(pg)
+    check('[BAD END] 再戦: 持ち金1,000円・あき4,000円・即配札', s['purse'] == 1000 and s['boss'] == 4000 and not pg.is_visible('#badend'), json.dumps(s)[:160])
+    check('[BAD END] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
     pg.context.close()
 
 def scenario_desktop(b):

@@ -70,7 +70,7 @@
   }
 
   // ---------------------------------------------------------------- 戦績(スコア = 勝って得た配当の累計。負けても減らない)
-  const STAT0 = { clears: 0, bestClear: 0, score: 0, wins: 0, losses: 0, pushes: 0, streak: 0, bestStreak: 0, bestPurse: START_PURSE, maxWin: 0 };
+  const STAT0 = { badEnds: 0, clears: 0, bestClear: 0, score: 0, wins: 0, losses: 0, pushes: 0, streak: 0, bestStreak: 0, bestPurse: START_PURSE, maxWin: 0 };
   let stats = Object.assign({}, STAT0);
   function loadStats() {
     if (testMode) return;
@@ -95,7 +95,7 @@
     if (bump) { const t = $('scoreBtn'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); }
   }
   function openStats() {
-    const rows = [['あきから回収', stats.clears + ' 回'], ['最短クリア', stats.bestClear ? stats.bestClear + ' 戦' : '―'], ['スコア', fmt(stats.score) + ' 点'], ['勝ち / 負け / 引分', stats.wins + ' / ' + stats.losses + ' / ' + stats.pushes],
+    const rows = [['あきから回収', stats.clears + ' 回'], ['BAD END', stats.badEnds + ' 回'], ['最短クリア', stats.bestClear ? stats.bestClear + ' 戦' : '―'], ['スコア', fmt(stats.score) + ' 点'], ['勝ち / 負け / 引分', stats.wins + ' / ' + stats.losses + ' / ' + stats.pushes],
       ['連勝(最高)', stats.bestStreak + ' 連勝'], ['最高持ち金', fmt(stats.bestPurse) + ' 円'], ['最高配当', fmt(stats.maxWin) + ' 円']];
     $('statsList').innerHTML = rows.map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
     $('stats').hidden = false;
@@ -200,7 +200,7 @@
       if (S.coin) { mode = 'bet'; text = 'BET ' + fmt(S.coin) + '円を確定'; enabled = !S.busy; }
       else { mode = 'hint'; text = '金額を選んでください'; }
     } else if (st === 'decide') { mode = 'decide'; }
-    else if (st === 'result') { mode = 'next'; text = S.cleared ? 'もう一度あきに挑む' : S.purse < 5 ? '1,000円でもう一度' : '次の勝負'; enabled = !S.busy; }
+    else if (st === 'result') { mode = 'next'; text = S.cleared ? 'もう一度あきに挑む' : S.purse < 5 ? '…次の日' : '次の勝負'; enabled = !S.busy; }
     slot.dataset.mode = mode;
     slotBtn.textContent = text;
     slotBtn.disabled = !enabled;
@@ -452,9 +452,38 @@
     a.finished.then(() => { if (S.stage === 'result') laneChipEls[S.picked] && laneChipEls[S.picked].replaceChildren(); }).catch(() => {});
   }
 
+  /** 持ち金が尽きた: 暗転 → 「次の日」 → 焼きまんじゅうを奢ってもらった。BAD END → 再挑戦ボタン */
+  async function badEnd() {
+    const be = $('badend');
+    fast = false;
+    stats.badEnds++; stats.streak = 0; saveStats();
+    be.classList.remove('s-day', 's-scene', 's-stamp', 's-btn');
+    be.hidden = false;
+    void be.offsetWidth;
+    be.classList.add('on');
+    A.play('lose');
+    await sleep(900);
+    be.classList.add('s-day');
+    await sleep(1900);
+    be.classList.remove('s-day');
+    await sleep(600);
+    be.classList.add('s-scene');
+    await sleep(1500);
+    be.classList.add('s-stamp'); A.play('impact'); FX.shake(2);
+    await sleep(1100);
+    be.classList.add('s-btn');
+    await new Promise(res => { $('beBtn').onclick = () => { $('beBtn').onclick = null; res(); }; });
+    A.play('coin');
+    be.classList.remove('on');
+    await sleep(500);
+    be.hidden = true;
+    be.classList.remove('s-day', 's-scene', 's-stamp', 's-btn');
+  }
+
   async function next() {
     if (S.busy || S.stage !== 'result') return;
     S.busy = true;
+    if (S.purse < 5) await badEnd();
     document.querySelectorAll('.card').forEach(c => {
       c.animate([{ opacity: 1 }, { opacity: 0, transform: getComputedStyle(c).transform + ' translateY(-10px)' }],
         { duration: 220 * timeScale, fill: 'forwards' });
