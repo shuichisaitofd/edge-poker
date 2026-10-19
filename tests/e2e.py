@@ -267,6 +267,26 @@ def scenario_rules(b):
         shot(pg, f'rule_{name}')
         pg.context.close()
 
+def scenario_boss(b):
+    """あき(持ち金4,000円)を倒すとクリア。配当はあきの残額が上限。"""
+    pg = new_page(b, 390, 844, 3)
+    check('[ボス] 初期: あき4,000円・札に表示', snap(pg)['boss'] == 4000 and '4,000' in pg.inner_text('#bossTag'))
+    pg.evaluate('window.__kabu.setBoss(200)')
+    check('[ボス] 残額が札に反映', '200' in pg.inner_text('#bossTag'))
+    stack(pg, [3, 11, 5, 6, 8, 9, 14, 2, 7, 10])      # シッピン(x3)勝ちの並び: 通常なら+300円
+    start_and_pick(pg, 1, 100)
+    pg.locator('#slotBtn').tap(); wait_stage(pg, 'decide')
+    pg.locator('#standBtn').tap(); wait_stage(pg, 'result', 60000)
+    s = snap(pg)
+    check('[ボス] 勝ち・配当はあきの残額200円で打ち止め(持ち金1,200円)', s['last']['outcome'] == 'win' and s['purse'] == 1200 and s['boss'] == 0, json.dumps(s['last'], ensure_ascii=False)[:160])
+    check('[ボス] クリア扱い・スロット=もう一度あきに挑む', s['cleared'] and pg.inner_text('#slotBtn') == 'もう一度あきに挑む')
+    shot(pg, 'boss_clear')
+    tap(pg, '#slotBtn'); wait_stage(pg, 'pick')
+    s = snap(pg)
+    check('[ボス] 再挑戦: あき4,000円・持ち金1,000円に戻る', s['boss'] == 4000 and s['purse'] == 1000 and not s['cleared'], json.dumps(s)[:160])
+    check('[ボス] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
+    pg.context.close()
+
 def scenario_bankrupt(b):
     pg = new_page(b, 390, 844, 9)
     pg.evaluate('window.__kabu.setPurse(5)')
@@ -356,6 +376,7 @@ if __name__ == '__main__':
         scenario_tapdeal(b)
         scenario_timing(b)
         scenario_rules(b)
+        scenario_boss(b)
         scenario_bankrupt(b)
         scenario_desktop(b)
         b.close()

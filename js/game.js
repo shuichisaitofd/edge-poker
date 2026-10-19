@@ -8,6 +8,7 @@
   const $ = id => document.getElementById(id);
   const AMOUNTS = [5, 10, 100, 500];
   const START_PURSE = 1000;
+  const BOSS_PURSE = 4000;   // ガソスタに忘れた、あきの4,000円。0にすればクリア
 
   const params = new URLSearchParams(location.search);
   const seedParam = params.get('seed');
@@ -23,7 +24,7 @@
     run: 0,
     deck: [], lanes: [[], [], [], []], dealer: [],
     picked: -1, coin: 0, stake: 0,
-    purse: START_PURSE, round: 0,
+    purse: START_PURSE, round: 0, boss: BOSS_PURSE, runRounds: 0,
     forced: null,       // テスト用: 次の山札の並びを固定
     last: null
   };
@@ -52,11 +53,24 @@
   }
   function savePurse() {
     if (testMode) return;
-    try { localStorage.setItem('kabu.purse', String(S.purse)); } catch (e) { /* ignore */ }
+    try { localStorage.setItem('kabu.purse', String(S.purse)); localStorage.setItem('kabu.boss', String(S.boss)); localStorage.setItem('kabu.runRounds', String(S.runRounds)); } catch (e) { /* ignore */ }
+  }
+  function loadBoss() {
+    if (testMode) return;
+    try {
+      const b = parseInt(localStorage.getItem('kabu.boss'), 10);
+      if (b > 0 && b <= BOSS_PURSE) S.boss = b;
+      S.runRounds = parseInt(localStorage.getItem('kabu.runRounds'), 10) || 0;
+    } catch (e) { /* ignore */ }
+  }
+  function renderBoss(bump) {
+    const t = $('bossTag');
+    t.textContent = 'あき  ' + fmt(S.boss) + '円';
+    if (bump) { t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); }
   }
 
   // ---------------------------------------------------------------- 戦績(スコア = 勝って得た配当の累計。負けても減らない)
-  const STAT0 = { score: 0, wins: 0, losses: 0, pushes: 0, streak: 0, bestStreak: 0, bestPurse: START_PURSE, maxWin: 0 };
+  const STAT0 = { clears: 0, bestClear: 0, score: 0, wins: 0, losses: 0, pushes: 0, streak: 0, bestStreak: 0, bestPurse: START_PURSE, maxWin: 0 };
   let stats = Object.assign({}, STAT0);
   function loadStats() {
     if (testMode) return;
@@ -81,7 +95,7 @@
     if (bump) { const t = $('scoreBtn'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); }
   }
   function openStats() {
-    const rows = [['スコア', fmt(stats.score) + ' 点'], ['勝ち / 負け / 引分', stats.wins + ' / ' + stats.losses + ' / ' + stats.pushes],
+    const rows = [['あきから回収', stats.clears + ' 回'], ['最短クリア', stats.bestClear ? stats.bestClear + ' 戦' : '―'], ['スコア', fmt(stats.score) + ' 点'], ['勝ち / 負け / 引分', stats.wins + ' / ' + stats.losses + ' / ' + stats.pushes],
       ['連勝(最高)', stats.bestStreak + ' 連勝'], ['最高持ち金', fmt(stats.bestPurse) + ' 円'], ['最高配当', fmt(stats.maxWin) + ' 円']];
     $('statsList').innerHTML = rows.map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
     $('stats').hidden = false;
@@ -160,6 +174,7 @@
   function refresh() {
     const st = S.stage;
     $('purseAmount').textContent = fmt(S.purse);
+    renderBoss(false);
     $('deckTag').textContent = st === 'idle' ? 'タップで配る' : '残り ' + S.deck.length + '枚';
     deckBtn.disabled = !(st === 'idle' && !S.busy);
 
@@ -185,7 +200,7 @@
       if (S.coin) { mode = 'bet'; text = 'BET ' + fmt(S.coin) + '円を確定'; enabled = !S.busy; }
       else { mode = 'hint'; text = '金額を選んでください'; }
     } else if (st === 'decide') { mode = 'decide'; }
-    else if (st === 'result') { mode = 'next'; text = S.purse < 5 ? '1,000円でもう一度' : '次の勝負'; enabled = !S.busy; }
+    else if (st === 'result') { mode = 'next'; text = S.cleared ? 'もう一度あきに挑む' : S.purse < 5 ? '1,000円でもう一度' : '次の勝負'; enabled = !S.busy; }
     slot.dataset.mode = mode;
     slotBtn.textContent = text;
     slotBtn.disabled = !enabled;
@@ -294,7 +309,7 @@
     A.unlock();
     S.busy = true; fast = false;
     const run = ++S.run;
-    S.round++;
+    S.round++; S.runRounds++;
     S.picked = -1; S.coin = 0; S.stake = 0;
     S.lanes = [[], [], [], []]; S.dealer = [];
     S.deck = S.forced ? S.forced.slice() : R.shuffle(R.makeDeck(), rnd);
@@ -372,7 +387,7 @@
       if (rumbled) { FX.release(); A.play('impact'); FX.shake(2); } else A.play('flip');
       await sleep(560);
       const part = S.dealer.slice(0, k + 1);
-      showDealerScore('親 ' + (last ? handText(S.dealer, true) : R.score(part) + '点'), true);
+      showDealerScore('あき ' + (last ? handText(S.dealer, true) : R.score(part) + '点'), true);
       await sleep(360);
     }
   }
@@ -380,22 +395,29 @@
   async function finish(run) {
     const mine = S.lanes[S.picked];
     const j = R.judge(mine, S.dealer, S.stake);
+    if (j.outcome === 'win' && j.profit > S.boss) {          // あきの持ち金以上は取れない
+      j.profit = S.boss; j.returned = S.stake + S.boss; j.delta = S.boss;
+    }
     S.last = j;
+    if (j.outcome === 'win') S.boss -= j.profit;
+    const cleared = S.boss <= 0;
     await sleep(380);
     if (run !== S.run) return;
 
-    const special = j.player.type !== 'normal' || j.dealer.type === 'kuppin';
+    const special = j.player.type !== 'normal' || j.dealer.type === 'kuppin' || cleared;
     if (j.outcome === 'win') {
-      const txt = j.player.type !== 'normal' ? j.player.name + '！' : '勝ち！';
+      const txt = cleared ? '完全勝利！' : j.player.type !== 'normal' ? j.player.name + '！' : '勝ち！';
       A.play(special ? 'big' : 'win');
       FX.shake(special ? 2 : 1);
-      if (special) FX.shout(pick(['おおおっ！', 'マジかよ！', 'やりやがった！']), pick(['tl', 'bl', 'br']));
-      await FX.cutin(txt, special ? 'special' : 'win', special ? pick(['天運…ッ！', '圧倒的…ッ！', '引き当てたァ…！']) : pick(['読みどおり…！', '勝負あり！', 'もらったッ！']));
+      if (cleared) FX.shout('俺の4,000円がァ…！', 'tl');
+      else if (special) FX.shout(pick(['おおおっ！', 'マジかよ！', 'やりやがった！']), pick(['tl', 'bl', 'br']));
+      else FX.shout(S.boss <= 1000 ? pick(['もう返してくれ…！', '頼む、もうやめろ…']) : pick(['くっ…俺の金が', 'ちょ、待て！']), 'tl');
+      await FX.cutin(txt, special ? 'special' : 'win', cleared ? 'あきの4,000円、いただき！' : special ? pick(['天運…ッ！', '圧倒的…ッ！', '引き当てたァ…！']) : pick(['読みどおり…！', '勝負あり！', 'もらったッ！']));
     } else if (j.outcome === 'lose') {
       const txt = j.dealer.type === 'kuppin' ? 'クッピン！' : '負け…';
       A.play('lose');
       if (j.dealer.type !== 'normal') FX.shake();
-      FX.shout(pick(['惜しいなぁ…', 'ドンマイッ！', 'ククク…親の勝ちだ']), pick(['bl', 'br']));
+      FX.shout(pick(['この金は渡さん！', 'ククク…俺の勝ちだ', '甘いなァ…']), pick(['bl', 'br']));
       await FX.cutin(txt, j.dealer.type === 'kuppin' ? 'special' : 'lose', pick(['ぐぬぬ…', '不覚ッ…！', '地獄…ッ！']));
     } else {
       A.play('push');
@@ -404,11 +426,14 @@
 
     S.purse += j.returned;
     savePurse();
+    S.cleared = cleared;
+    if (cleared) { stats.clears++; stats.bestClear = stats.bestClear ? Math.min(stats.bestClear, S.runRounds) : S.runRounds; }
     recordResult(j);
+    renderBoss(true);
     const pt = j.player.type === 'normal' ? j.player.score + '点' : j.player.name;
     const dt = j.dealer.type === 'normal' ? j.dealer.score + '点' : j.dealer.name;
     const money = j.delta > 0 ? '＋' + fmt(j.delta) + '円' : j.delta < 0 ? '−' + fmt(-j.delta) + '円' : '±0円';
-    const title = (j.outcome === 'win' ? '勝ち' : j.outcome === 'lose' ? '負け' : '引き分け') + '  ' + money;
+    const title = cleared ? 'クリア！  ＋' + fmt(j.delta) + '円' : (j.outcome === 'win' ? '勝ち' : j.outcome === 'lose' ? '負け' : '引き分け') + '  ' + money;
     showVerdict(j.outcome, title, 'あなた ' + pt + ' 対 親 ' + dt);
     settleChip(j.outcome);
     S.busy = false;
@@ -440,7 +465,7 @@
     laneChipEls.forEach(e => e.replaceChildren());
     S.lanes = [[], [], [], []]; S.dealer = [];
     S.picked = -1; S.coin = 0; S.stake = 0;
-    if (S.purse < 5) { S.purse = START_PURSE; savePurse(); }
+    if (S.purse < 5 || S.cleared) { S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0; S.cleared = false; savePurse(); renderBoss(true); }
     fast = false;
     S.busy = false;
     setStage('idle');
@@ -451,7 +476,7 @@
   function snapshot() {
     const landed = sel => Array.from(document.querySelectorAll(sel)).filter(c => c.dataset.state === 'landed').length;
     return {
-      stage: S.stage, busy: S.busy, round: S.round, purse: S.purse, stake: S.stake, picked: S.picked, coin: S.coin,
+      stage: S.stage, busy: S.busy, round: S.round, boss: S.boss, cleared: !!S.cleared, purse: S.purse, stake: S.stake, picked: S.picked, coin: S.coin,
       deckLeft: S.deck.length,
       lanes: S.lanes.map(l => l.map(c => c.id)),
       dealer: S.dealer.map(c => c.id),
@@ -472,11 +497,12 @@
       return true;
     },
     setPurse(v) { S.purse = v; refresh(); },
+    setBoss(v) { S.boss = v; refresh(); },
     setSpeed() { /* timeScale は ?speed= で指定 */ }
   };
 
   build();
-  S.purse = loadPurse();
+  S.purse = loadPurse(); loadBoss();
   loadStats(); renderScore(false);
   setStage('idle');
 })();
