@@ -267,6 +267,45 @@ def scenario_rules(b):
         shot(pg, f'rule_{name}')
         pg.context.close()
 
+def scenario_title(b):
+    """スタート画面 → ロード(あらすじ) → ゲーム。?title=1 で表示。"""
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    ctx.route(re.compile(r'https://fonts\.(googleapis|gstatic)\.com/.*'), lambda r: r.fulfill(status=200, body='', content_type='text/css'))
+    pg = ctx.new_page(); pg.errors = []
+    pg.on('console', lambda m: pg.errors.append(m.text) if m.type == 'error' else None)
+    pg.on('pageerror', lambda e: pg.errors.append('PAGEERROR ' + str(e)))
+    pg.goto(f'{BASE}?title=1&seed=2&speed=0.4')
+    pg.wait_for_selector('#titleBtn')
+    check('[スタート画面] ロゴとボタン「あきから4000円を奪う」', pg.is_visible('.title-logo') and pg.inner_text('#titleBtn') == 'あきから4000円を奪う')
+    check('[スタート画面] 背景の上でも卓の札はまだ操作不可(オーバーレイ)', pg.evaluate("document.elementFromPoint(195, 420).closest('#title') !== null"))
+    pg.wait_for_timeout(1800)
+    shot(pg, 'title_00_start')
+    pg.locator('#titleBtn').tap()
+    pg.wait_for_function("document.getElementById('title').dataset.phase==='loading'")
+    txt = pg.inner_text('.load-main').replace('\n', '')
+    check('[ロード画面] 「あきがガソスタに忘れた4000円を奪え」が出る', txt == 'あきがガソスタに忘れた4000円を奪え', txt)
+    pg.wait_for_timeout(700)
+    check('[ロード画面] ロゴ・ボタンは消える', pg.evaluate("getComputedStyle(document.getElementById('titleBtn')).opacity") == '0' and pg.evaluate("getComputedStyle(document.querySelector('.title-head')).opacity") == '0')
+    pg.wait_for_function("document.querySelectorAll('#loadLines li.on').length>=2")
+    shot(pg, 'title_01_loading')
+    pg.wait_for_function("document.querySelectorAll('#loadLines li.on').length===4")
+    check('[ロード画面] 説明が4行、順番に流れる', True)
+    pg.wait_for_selector('#title', state='detached', timeout=15000)
+    check('[ロード→ゲーム] 画面が閉じ、タップで配れる状態(idle)', snap(pg)['stage'] == 'idle' and pg.is_visible('#startHint'))
+    pg.touchscreen.tap(60, 520); wait_stage(pg, 'pick')
+    check('[ロード→ゲーム] そのまま配札できる', snap(pg)['stage'] == 'pick')
+    check('[スタート画面] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
+    ctx.close()
+    # スキップ: ロード中タップ
+    pg = b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True).new_page()
+    pg.route(re.compile(r'https://fonts\..*'), lambda r: r.fulfill(status=200, body='', content_type='text/css'))
+    pg.goto(f'{BASE}?title=1&seed=2&speed=3'); pg.wait_for_selector('#titleBtn'); pg.locator('#titleBtn').tap()
+    pg.wait_for_function("document.getElementById('title').dataset.phase==='loading'")
+    pg.touchscreen.tap(195, 400)
+    pg.wait_for_selector('#title', state='detached', timeout=5000)
+    check('[ロード画面] タップでスキップできる', snap(pg)['stage'] == 'idle')
+    pg.context.close()
+
 def scenario_boss(b):
     """あき(持ち金4,000円)を倒すとクリア。配当はあきの残額が上限。"""
     pg = new_page(b, 390, 844, 3)
@@ -376,6 +415,7 @@ if __name__ == '__main__':
         scenario_tapdeal(b)
         scenario_timing(b)
         scenario_rules(b)
+        scenario_title(b)
         scenario_boss(b)
         scenario_bankrupt(b)
         scenario_desktop(b)
