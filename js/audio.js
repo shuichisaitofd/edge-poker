@@ -81,6 +81,8 @@
       for (let i = 0; i < 16; i++) { const f = 523.25 * Math.pow(2, [0, 4, 7, 12][i % 4] / 12) * (i > 7 ? 2 : 1); tone(t + 0.1 + i * 0.075, 'triangle', f, f, 0.2, 0.12); };
       for (let i = 0; i < 14; i++) S.coin(t + 1.4 + i * 0.11);
     },
+    engine(t) { tone(t, 'sawtooth', 70, 190, 0.8, 0.11, 0.5); tone(t + 0.05, 'square', 52, 120, 0.8, 0.08, 0.5); noiseHit(t, 0.8, 'bandpass', 300, 900, 0.8, 0.07); },
+    item(t) { S.drum(t); [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => tone(t + 0.12 + i * 0.09, 'triangle', f, f, 0.5, 0.16)); for (let i = 0; i < 5; i++) tone(t + 0.6 + i * 0.07, 'sine', 2093 + i * 180, 2093 + i * 180, 0.2, 0.05); },
     reel(t) { tone(t, 'square', 1400, 1300, 0.04, 0.05); },
     push(t) { tone(t, 'triangle', 440, 440, 0.18, 0.12); tone(t + 0.14, 'triangle', 440, 440, 0.2, 0.1); }
   };

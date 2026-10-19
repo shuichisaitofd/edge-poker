@@ -33,7 +33,7 @@ def tap(pg, sel):
     pg.locator(sel).first.tap() if TOUCH[0] else pg.locator(sel).first.click()
 TOUCH = [True]
 
-def new_page(b, w, h, seed, touch=True):
+def new_page(b, w, h, seed, touch=True, extra=''):
     TOUCH[0] = touch
     ctx = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=2 if touch else 1,
                         is_mobile=touch, has_touch=touch)
@@ -43,7 +43,7 @@ def new_page(b, w, h, seed, touch=True):
     pg.errors = []
     pg.on('console', lambda m: pg.errors.append(m.text) if m.type == 'error' else None)
     pg.on('pageerror', lambda e: pg.errors.append('PAGEERROR ' + str(e)))
-    pg.goto(f'{BASE}?seed={seed}&speed={args.speed}&purse=1000')
+    pg.goto(f'{BASE}?seed={seed}&speed={args.speed}&purse=1000{extra}')
     pg.wait_for_selector('#deck')
     return pg
 
@@ -354,6 +354,87 @@ def scenario_reset(b):
     check('[リセット] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
     pg.context.close()
 
+def scenario_items(b):
+    """お助けアイテム: 新規スタートのルーレット/のぞき見/引き直し/お守り/3連敗のバイク/リセット。"""
+    pg = new_page(b, 390, 844, 3, extra='&items=1')
+    LOSE = [3, 17, 5, 6, 1, 4, 18, 2, 7, 9]               # 場1に賭けて負ける並び(endings.py と同じ)
+    stack(pg, LOSE)
+    tap(pg, '#deck')
+    pg.wait_for_function("document.getElementById('itemfx').classList.contains('on') && document.getElementById('itemfx').dataset.mode==='roulette'", timeout=10000)
+    check('[アイテム] 新規スタートでルーレットが回る', pg.is_visible('#ifxReel') and pg.inner_text('#ifxTitle') != '')
+    shot(pg, 'item_roulette')
+    pg.wait_for_function("!document.getElementById('ifxReveal').hidden", timeout=20000)
+    pg.wait_for_timeout(900)
+    nm = pg.inner_text('#ifxName'); ds = pg.inner_text('#ifxDesc')
+    check('[アイテム] 当たりが拡大表示され、名前と説明が載る', nm in ('のぞき見', '引き直し', 'お守り') and len(ds) > 8, nm + ' / ' + ds)
+    check('[アイテム] 後光(ifx-halo)が出ている', pg.is_visible('.ifx-halo') and pg.is_visible('.ifx-card'))
+    shot(pg, 'item_reveal')
+    pg.locator('#itemfx').tap()
+    wait_stage(pg, 'pick')
+    s = snap(pg)
+    check('[アイテム] 閉じると手持ちに1個・そのまま配札', len(s['items']) == 1 and s['startGiven'] and pg.is_visible('#items .item-btn') and pg.is_disabled('#items .item-btn'), json.dumps(s['items']))
+    # --- 判断の前だけ使える
+    pg.evaluate("window.__kabu.giveItem('peek'); window.__kabu.giveItem('redraw')")
+    tap(pg, '.lane[data-lane="1"]'); tap(pg, '.coin[data-amount="100"]'); tap(pg, '#slotBtn')
+    wait_stage(pg, 'decide')
+    check('[アイテム] 判断の場面でアイテムが押せる', not pg.is_disabled('#items .item-btn'))
+    shot(pg, 'item_rack')
+    before = snap(pg)
+    pg.locator('#items .item-btn[data-item="peek"]').tap()
+    pg.wait_for_timeout(300)
+    face = pg.evaluate("document.querySelectorAll('#dealerHand .card')[1].dataset.face")
+    after = snap(pg)
+    check('[のぞき見] あきの2枚目が表になり、点数が出て、使い切り', face == 'up' and 'あき' in pg.inner_text('#dealerScore') and 'peek' not in after['items'] and len(after['items']) == len(before['items']) - 1, json.dumps(after['items']))
+    pg.locator('#items .item-btn[data-item="redraw"]').tap()
+    pg.wait_for_function("window.__kabu.snapshot().lanes[1].length===2 && !window.__kabu.snapshot().busy && window.__kabu.snapshot().items.indexOf('redraw')<0", timeout=10000)
+    after2 = snap(pg)
+    check('[引き直し] 2枚目だけが別の札に替わる(1枚目はそのまま・枚数は2枚)', after2['lanes'][1][0] == before['lanes'][1][0] and after2['lanes'][1][1] != before['lanes'][1][1] and after2['domLanes'][1] == 2, json.dumps([before['lanes'][1], after2['lanes'][1]]))
+    pg.context.close()
+
+    # --- お守り: 負けても賭け金の半分が戻る / あきには半分だけ
+    pg = new_page(b, 390, 844, 3, extra='&items=1')
+    stack(pg, LOSE)
+    pg.evaluate("window.__kabu.giveItem('charm')")
+    tap(pg, '#deck')
+    pg.wait_for_function("!document.getElementById('ifxReveal').hidden", timeout=20000); pg.wait_for_timeout(900); pg.locator('#itemfx').tap()
+    wait_stage(pg, 'pick')
+    pg.evaluate("window.__kabu.setPurse(1000)")
+    tap(pg, '.lane[data-lane="1"]'); tap(pg, '.coin[data-amount="100"]'); tap(pg, '#slotBtn')
+    wait_stage(pg, 'decide')
+    tap(pg, '#items .item-btn[data-item="charm"]')
+    check('[お守り] 使うと「お守り中」の表示', pg.is_visible('#charmNote') and snap(pg)['charm'])
+    shot(pg, 'item_charm_on')
+    tap(pg, '#standBtn')
+    wait_stage(pg, 'result', 60000)
+    s = snap(pg)
+    check('[お守り] 負けても50円戻る(持ち金950・あき4,050)・お守りは消える', s['last']['outcome'] == 'lose' and s['purse'] == 950 and s['boss'] == 4050 and not s['charm'] and not pg.is_visible('#charmNote'), json.dumps({k: s[k] for k in ('purse', 'boss', 'charm')}))
+    check('[お守り] 結果に「お守りで50円戻った」', '50円戻った' in pg.inner_text('#verdict'))
+
+    # --- 3連敗: バイクが来てアイテムを落とす
+    pg.evaluate("window.__kabu.setLoseStreak(3)")
+    n0 = len(snap(pg)['items'])
+    tap(pg, '#slotBtn')
+    pg.wait_for_function("document.getElementById('itemfx').dataset.mode==='bike' && !document.getElementById('ifxBike').hidden", timeout=10000)
+    check('[バイク] 3連敗で画面横からバイクが来る', pg.is_visible('#ifxBike'))
+    pg.wait_for_function("!document.getElementById('ifxDrop').hidden", timeout=10000)
+    check('[バイク] 中央でアイテムを落とす', pg.is_visible('#ifxDrop') and 'svg' in pg.evaluate("document.getElementById('ifxDrop').innerHTML"))
+    shot(pg, 'item_bike_drop')
+    pg.wait_for_function("!document.getElementById('ifxReveal').hidden", timeout=20000)
+    pg.wait_for_timeout(900)
+    shot(pg, 'item_bike_reveal')
+    pg.locator('#itemfx').tap()
+    wait_stage(pg, 'pick')
+    s = snap(pg)
+    check('[バイク] アイテムが1個増え、連敗数は0に戻る', len(s['items']) == n0 + 1 and s['loseStreak'] == 0, json.dumps(s['items']))
+    # --- リセット: アイテムも初期化
+    tap(pg, '#scoreBtn')
+    tap(pg, '#resetRun'); tap(pg, '#resetRun')
+    pg.wait_for_function("window.__kabu.snapshot().stage==='idle'")
+    s = snap(pg)
+    check('[リセット] アイテムも連敗数もリセット', s['items'] == [] and s['loseStreak'] == 0 and not s['startGiven'] and not pg.is_visible('#items'), json.dumps(s['items']))
+    check('[アイテム] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
+    pg.context.close()
+
 def scenario_persist(b):
     """保存の復元: 持ち金が尽きた状態が残っていても、再訪時は持ち金2,500・あき4,000に戻る"""
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
@@ -498,6 +579,7 @@ if __name__ == '__main__':
         scenario_boss(b)
         scenario_reset(b)
         scenario_persist(b)
+        scenario_items(b)
         scenario_nine(b)
         scenario_bankrupt(b)
         scenario_desktop(b)

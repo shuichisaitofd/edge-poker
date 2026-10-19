@@ -15,7 +15,10 @@
   const START_PURSE = (params.has('seed') || params.has('test')) && parseInt(params.get('purse'), 10) >= 5 ? parseInt(params.get('purse'), 10) : DEFAULT_START;   // ?purse=N はテスト用
   const rnd = seedParam !== null ? R.mulberry32(parseInt(seedParam, 10) || 0) : Math.random;
   const testMode = seedParam !== null || params.has('test');
+  const Items = Kabu.items;
+  const MAX_ITEMS = 3;
   const persist = !testMode || params.has('persist');   // テストは保存しない(?persist=1 で保存の検証だけ有効化)
+  const itemsOn = !testMode || params.has('items');   // テストは既定でアイテム無効(?items=1 で有効)
   // 見た目だけのランダム(札の傾き・一言)。?seed= のときは固定してスクリーンショット比較を決定的にする
   const cos = seedParam !== null ? R.mulberry32((parseInt(seedParam, 10) || 0) + 777) : Math.random;
   const timeScale = FX.reduce ? 0.2 : (parseFloat(params.get('speed')) || 1);
@@ -27,6 +30,7 @@
     deck: [], lanes: [[], [], [], []], dealer: [],
     picked: -1, coin: 0, stake: 0,
     purse: START_PURSE, round: 0, boss: BOSS_PURSE, runRounds: 0,
+    items: [], loseStreak: 0, startGiven: false, charm: false,   // お助けアイテム
     forced: null,       // テスト用: 次の山札の並びを固定
     last: null
   };
@@ -55,7 +59,7 @@
   }
   function savePurse() {
     if (!persist) return;
-    try { localStorage.setItem('kabu.purse', String(S.purse)); localStorage.setItem('kabu.boss', String(S.boss)); localStorage.setItem('kabu.runRounds', String(S.runRounds)); } catch (e) { /* ignore */ }
+    try { localStorage.setItem('kabu.purse', String(S.purse)); localStorage.setItem('kabu.boss', String(S.boss)); localStorage.setItem('kabu.runRounds', String(S.runRounds)); localStorage.setItem('kabu.items', JSON.stringify({ items: S.items, ls: S.loseStreak, sg: S.startGiven })); } catch (e) { /* ignore */ }
   }
   /** 保存された挑戦を復元。持ち金が尽きた(BAD END途中で閉じた等)/あきを倒した後の保存は、最初の状態に戻す */
   function loadBoss() {
@@ -63,9 +67,11 @@
     try {
       const p = parseInt(localStorage.getItem('kabu.purse'), 10);
       const b = parseInt(localStorage.getItem('kabu.boss'), 10);
-      if (!(p >= 5) || !(b > 0) || b >= 10000000) { S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0; savePurse(); return; }
+      if (!(p >= 5) || !(b > 0) || b >= 10000000) { S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0; resetItems(); savePurse(); return; }
       S.boss = b;
       S.runRounds = parseInt(localStorage.getItem('kabu.runRounds'), 10) || 0;
+      const it = JSON.parse(localStorage.getItem('kabu.items') || 'null');
+      if (it && Array.isArray(it.items)) { S.items = it.items.filter(x => Items.DEFS[x]).slice(0, MAX_ITEMS); S.loseStreak = Math.max(0, it.ls | 0); S.startGiven = !!it.sg; }
     } catch (e) { /* ignore */ }
   }
   function renderBoss(bump) {
@@ -108,6 +114,70 @@
       t = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = label; }, 3000);
     });
   }
+  // ---------------------------------------------------------------- お助けアイテム
+  function resetItems() { S.items = []; S.loseStreak = 0; S.startGiven = false; S.charm = false; renderRack(); renderCharm(); }
+  function renderRack() {
+    const rack = $('items');
+    rack.hidden = !itemsOn || !S.items.length;
+    Items.renderRack(S.items);
+    syncRack();
+  }
+  function syncRack() {
+    const on = S.stage === 'decide' && !S.busy;
+    document.querySelectorAll('#items .item-btn').forEach(b => { b.disabled = !on; });
+  }
+  function renderCharm() { $('charmNote').hidden = !S.charm; $('purse').classList.toggle('charm', !!S.charm); }
+  function addItem(id) { if (S.items.length < MAX_ITEMS) S.items.push(id); renderRack(); savePurse(); }
+  /** 新規スタートでルーレット / 3連敗でバイクが届ける */
+  async function giveItems(run) {
+    if (!S.startGiven) {
+      S.startGiven = true;
+      const id = Items.pickId(cos);
+      await Items.roulette(id, timeScale);
+      if (run !== S.run) return;
+      addItem(id);
+    } else if (S.loseStreak >= 3 && S.items.length < MAX_ITEMS) {
+      S.loseStreak = 0;
+      const id = Items.pickId(cos);
+      await Items.bikeDrop(id, timeScale);
+      if (run !== S.run) return;
+      addItem(id);
+    }
+    savePurse();
+  }
+  async function useItem(idx) {
+    if (!itemsOn || S.busy || S.stage !== 'decide') return;
+    const id = S.items[idx];
+    if (!id) return;
+    const run = S.run;
+    if (id === 'charm') {
+      if (S.charm) return;
+      S.items.splice(idx, 1); S.charm = true;
+      A.play('coin'); renderRack(); renderCharm(); savePurse();
+    } else if (id === 'peek') {
+      const c = dealerHandEl.querySelectorAll('.card')[1];
+      if (!c || c.dataset.face === 'up') return;
+      S.items.splice(idx, 1);
+      c.dataset.face = 'up'; A.play('flip');
+      showDealerScore('あき ' + handText(S.dealer, true), true);
+      renderRack(); savePurse();
+    } else if (id === 'redraw') {
+      const lane = S.picked, cardsEl = laneCardsEls[lane];
+      const old = cardsEl.querySelector('.card:last-child');
+      if (!old || S.lanes[lane].length !== 2) return;
+      S.items.splice(idx, 1);
+      S.busy = true; renderRack(); refresh();
+      const a = old.animate([{ opacity: 1 }, { opacity: 0, transform: getComputedStyle(old).transform + ' translateY(-24px) rotate(14deg)' }], { duration: 260 * timeScale, fill: 'forwards' });
+      try { await a.finished; } catch (e) { /* ignore */ }
+      if (run !== S.run) return;
+      old.remove(); S.lanes[lane].pop();
+      await dealTo({ lane }, true);
+      if (run !== S.run) return;
+      if (isNine(S.lanes[lane])) teaseOrZawa();
+      S.busy = false; refresh(); savePurse();
+    }
+  }
+
   /** 進行中の勝負も含めて破棄し、持ち金2,500円・あき4,000円・卓を空にして最初から(戦績は残す) */
   function resetRun() {
     S.run++; S.busy = false; fast = false;
@@ -117,6 +187,7 @@
     S.lanes = [[], [], [], []]; S.dealer = []; S.deck = [];
     S.picked = -1; S.coin = 0; S.stake = 0; S.cleared = false; S.last = null;
     S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0;
+    Items.cancel(); resetItems();
     savePurse(); hideVerdict(); showDealerScore(null);
     $('stats').hidden = true;
     setStage('idle');
@@ -171,6 +242,7 @@
       if (S.stage !== 'idle' || e.target.closest('.sound, .score-tag, .stats')) return;
       start();
     });
+    $('items').addEventListener('click', e => { const b = e.target.closest('.item-btn'); if (b) useItem(parseInt(b.dataset.idx, 10)); });
     $('scoreBtn').addEventListener('click', () => { A.play('tap'); openStats(); });
     $('statsClose').addEventListener('click', () => { $('stats').hidden = true; });
     armed($('resetRun'), '最初からやり直す', resetRun);
@@ -239,6 +311,7 @@
     slotBtn.textContent = text;
     slotBtn.disabled = !enabled;
     standBtn.disabled = hitBtn.disabled = !(st === 'decide' && !S.busy);
+    syncRack();
   }
 
   function showDealerScore(text, bump) {
@@ -349,6 +422,7 @@
     S.deck = S.forced ? S.forced.slice() : R.shuffle(R.makeDeck(), rnd);
     S.forced = null;
     hideVerdict(); showDealerScore(null);
+    if (itemsOn) { await giveItems(run); if (run !== S.run) return; }
     setStage('dealing');
     for (let i = 0; i < 4; i++) { await dealTo({ lane: i }, true); if (run !== S.run) return; }
     await dealTo({ dealer: true }, true);
@@ -414,8 +488,10 @@
 
   async function revealDealer(run) {
     const cards = Array.from(dealerHandEl.querySelectorAll('.card'));
+    let revealed = false;
     for (let k = 0; k < cards.length; k++) {
-      if (cards[k].dataset.face === 'up') continue;       // 最初から表向きの1枚目はそのまま
+      if (cards[k].dataset.face === 'up') continue;
+      revealed = true;       // 最初から表向きの1枚目はそのまま
       const last = k === cards.length - 1;
       let rumbled = false;
       if (last) {                                          // 最後の1枚: ゴゴゴ…と拡大・振動して溜める
@@ -435,6 +511,13 @@
       showDealerScore('あき ' + (last ? handText(S.dealer, true) : R.score(part) + '点'), true);
       await sleep(360);
     }
+    if (!revealed) {                                       // のぞき見で全部表向きだった時も、点数をきちんと見せる
+      await sleep(700);
+      if (run !== S.run) return;
+      A.play('impact'); FX.shake(1);
+      showDealerScore('あき ' + handText(S.dealer, true), true);
+      await sleep(360);
+    }
   }
 
   async function finish(run) {
@@ -443,9 +526,15 @@
     if (j.outcome === 'win' && j.profit > S.boss) {          // あきの持ち金以上は取れない
       j.profit = S.boss; j.returned = S.stake + S.boss; j.delta = S.boss;
     }
+    if (j.outcome === 'lose' && S.charm) {                      // お守り: 負けても賭け金の半分が戻る
+      const back = Math.floor(S.stake / 2);
+      j.returned = back; j.delta = -(S.stake - back); j.charm = back;
+    }
+    S.charm = false; renderCharm();
+    if (j.outcome === 'lose') S.loseStreak++; else if (j.outcome === 'win') S.loseStreak = 0;
     S.last = j;
     if (j.outcome === 'win') S.boss -= j.profit;
-    else if (j.outcome === 'lose') S.boss += S.stake;          // 負けた掛け金はあきの持ち金になる
+    else if (j.outcome === 'lose') S.boss += S.stake - (j.charm || 0);   // 負けた掛け金はあきの持ち金になる          // 負けた掛け金はあきの持ち金になる
     const cleared = S.boss <= 0;
     await sleep(380);
     if (run !== S.run) return;
@@ -480,7 +569,7 @@
     const dt = j.dealer.type === 'normal' ? j.dealer.score + '点' : j.dealer.name;
     const money = j.delta > 0 ? '＋' + fmt(j.delta) + '円' : j.delta < 0 ? '−' + fmt(-j.delta) + '円' : '±0円';
     const title = cleared ? 'クリア！  ＋' + fmt(j.delta) + '円' : (j.outcome === 'win' ? '勝ち' : j.outcome === 'lose' ? '負け' : '引き分け') + '  ' + money;
-    showVerdict(j.outcome, title, 'あなた ' + pt + ' 対 親 ' + dt);
+    showVerdict(j.outcome, title, 'あなた ' + pt + ' 対 親 ' + dt + (j.charm ? '(お守りで' + fmt(j.charm) + '円戻った)' : ''));
     settleChip(j.outcome);
     S.busy = false;
     setStage('result');
@@ -556,7 +645,7 @@
     laneChipEls.forEach(e => e.replaceChildren());
     S.lanes = [[], [], [], []]; S.dealer = [];
     S.picked = -1; S.coin = 0; S.stake = 0;
-    if (S.purse < 5 || S.cleared) { S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0; S.cleared = false; savePurse(); renderBoss(true); }
+    if (S.purse < 5 || S.cleared) { S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0; S.cleared = false; resetItems(); savePurse(); renderBoss(true); }
     fast = false;
     S.busy = false;
     setStage('idle');
@@ -568,7 +657,7 @@
     const landed = sel => Array.from(document.querySelectorAll(sel)).filter(c => c.dataset.state === 'landed').length;
     return {
       stage: S.stage, busy: S.busy, round: S.round, boss: S.boss, cleared: !!S.cleared, purse: S.purse, stake: S.stake, picked: S.picked, coin: S.coin,
-      deckLeft: S.deck.length,
+      deckLeft: S.deck.length, items: S.items.slice(), loseStreak: S.loseStreak, charm: S.charm, startGiven: S.startGiven,
       lanes: S.lanes.map(l => l.map(c => c.id)),
       dealer: S.dealer.map(c => c.id),
       domLanes: laneCardsEls.map((_, i) => landed('.lane[data-lane="' + i + '"] .card')),
@@ -587,6 +676,8 @@
       S.forced = rest.concat(ids.slice().reverse().map(id => byId[id]));
       return true;
     },
+    giveItem(id) { addItem(id); },
+    setLoseStreak(n) { S.loseStreak = n; },
     setPurse(v) { S.purse = v; refresh(); },
     setBoss(v) { S.boss = v; refresh(); },
     setSpeed() { /* timeScale は ?speed= で指定 */ }
@@ -595,5 +686,6 @@
   build();
   S.purse = loadPurse(); loadBoss();
   loadStats(); renderScore(false);
+  renderRack(); renderCharm();
   setStage('idle');
 })();

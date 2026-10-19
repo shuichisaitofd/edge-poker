@@ -14,7 +14,7 @@
 <link rel="preload" as="image" href="assets/title.webp">
 <link rel="prefetch" as="image" href="assets/end-bad.webp">
 <link rel="prefetch" as="image" href="assets/end-good.webp">
-<link rel="stylesheet" href="css/style.css?v=20261019e">
+<link rel="stylesheet" href="css/style.css?v=20261019g">
 </head>
 <body>
 <main class="app" id="app">
@@ -24,6 +24,8 @@
       <button class="tag score-tag" id="scoreBtn" type="button" aria-label="戦績を見る"><svg class="sc-ico" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="9" width="3.4" height="6"/><rect x="6.3" y="5" width="3.4" height="10"/><rect x="11.6" y="1" width="3.4" height="14"/></svg>SCORE <b id="scoreVal">0</b><span class="sc-open">戦績 ›</span></button>
       <button class="sound" id="sound" type="button" aria-label="効果音 オン/オフ" aria-pressed="false"></button>
     </div>
+
+    <div class="items" id="items" data-count="0" hidden></div>
 
     <div class="sp1"></div>
 
@@ -50,7 +52,7 @@
     <div class="sp2"></div>
 
     <section class="zone zone-bank">
-      <div class="purse" id="purse">持ち金 <strong id="purseAmount">2,500</strong>円</div>
+      <div class="purse" id="purse">持ち金 <strong id="purseAmount">2,500</strong>円<span class="charm-note" id="charmNote" hidden>お守り中</span></div>
     </section>
 
     <section class="zone zone-coins" id="coins" aria-label="賭け金の硬貨"></section>
@@ -66,6 +68,18 @@
     </section>
 
     <div class="omen" id="omen" aria-hidden="true"><span class="omen-l"></span><span class="omen-r"></span><span class="omen-c"></span></div>
+    <div class="itemfx" id="itemfx" hidden aria-hidden="true">
+      <div class="ifx-dim"></div>
+      <p class="ifx-title" id="ifxTitle" hidden></p>
+      <div class="ifx-reel" id="ifxReel" hidden><span class="ifx-ico"></span><b></b></div>
+      <div class="ifx-bike" id="ifxBike" hidden><svg viewBox="0 0 140 84" aria-hidden="true"><circle cx="28" cy="62" r="15" fill="#15110d" stroke="#e8dfc9" stroke-width="5"/><circle cx="112" cy="62" r="15" fill="#15110d" stroke="#e8dfc9" stroke-width="5"/><circle cx="28" cy="62" r="4" fill="#e8dfc9"/><circle cx="112" cy="62" r="4" fill="#e8dfc9"/><path d="M104 60L97 30l12-4" fill="none" stroke="#e8dfc9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 56C35 42 48 36 62 38l22-2c9 0 14 4 18 12l6 12-20 2H46z" fill="#a52b1a" stroke="#e8dfc9" stroke-width="3" stroke-linejoin="round"/><path d="M38 35h36q5 0 5 4H34q0-4 4-4z" fill="#15110d" stroke="#e8dfc9" stroke-width="2.5"/><circle cx="112" cy="32" r="5.5" fill="#ffe27a" stroke="#e8dfc9" stroke-width="2"/><rect x="4" y="10" width="40" height="28" rx="3" fill="#a52b1a" stroke="#e8dfc9" stroke-width="3"/><text x="24" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="#f3d98a" font-family="serif">出前</text></svg></div>
+      <div class="ifx-drop" id="ifxDrop" hidden></div>
+      <div class="ifx-reveal" id="ifxReveal" hidden>
+        <div class="ifx-halo"></div>
+        <div class="ifx-card"><span class="ifx-icon" id="ifxIcon"></span><h3 id="ifxName"></h3><p class="ifx-desc" id="ifxDesc"></p><p class="ifx-when" id="ifxWhen"></p></div>
+        <span class="ifx-tap">タップで閉じる</span>
+      </div>
+    </div>
     <div class="cutin" id="cutin" data-kind="win" aria-hidden="true"><div class="cutin-lines"></div><div class="cutin-band"><span id="cutinText"></span><small id="cutinSub"></small></div></div>
     <div class="stats" id="stats" hidden>
       <div class="stats-sheet" role="dialog" aria-label="戦績">
@@ -112,11 +126,12 @@
   </div>
 </main>
 <noscript><p style="color:#fff;text-align:center">JavaScriptを有効にしてください。</p></noscript>
-<script src="js/rules.js?v=20261019e"></script>
-<script src="js/cards.js?v=20261019e"></script>
-<script src="js/audio.js?v=20261019e"></script>
-<script src="js/fx.js?v=20261019e"></script>
-<script src="js/game.js?v=20261019e"></script>
-<script src="js/title.js?v=20261019e"></script>
+<script src="js/rules.js?v=20261019g"></script>
+<script src="js/cards.js?v=20261019g"></script>
+<script src="js/audio.js?v=20261019g"></script>
+<script src="js/fx.js?v=20261019g"></script>
+<script src="js/items.js?v=20261019g"></script>
+<script src="js/game.js?v=20261019g"></script>
+<script src="js/title.js?v=20261019g"></script>
 </body>
 </html>
