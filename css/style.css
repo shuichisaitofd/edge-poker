@@ -538,4 +538,5 @@ button:disabled { cursor: default; }
 .ask-btns { display: flex; gap: 10px; }
 .ask-btn { flex: 1; height: 48px; cursor: pointer; font: 900 17px / 1 var(--ff); letter-spacing: .12em; color: var(--ink, #2b1a0e); background: rgba(255, 255, 255, .55); border: 2px solid #8a6a3a; border-radius: 6px; }
 .ask-btn.use { color: #fff; background: var(--shu); border-color: #6f1a0f; }
+.ph { display: inline-block; max-width: 100%; }
 .ask-btn:active { transform: scale(.97); }

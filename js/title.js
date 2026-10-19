@@ -24,6 +24,7 @@
   }
 
   // セーブがあれば「続きから / 最初から」。なければ「あきから4000円を奪う」だけ
+  Kabu.jp.apply(document.querySelector('.load-main')); document.querySelectorAll('#loadLines li').forEach(Kabu.jp.apply);
   const G = Kabu.game;
   if (G && G.hasSave()) {
     const sm = G.summary();

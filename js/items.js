@@ -5,6 +5,7 @@
   window.Kabu = window.Kabu || {};
   const $ = id => document.getElementById(id);
   const A = () => Kabu.audio;
+  const J = Kabu.jp;
 
   const DEFS = {
     salt: { id: 'salt', img: 'assets/item-salt.webp', name: 'ようすけの89点の伯方の塩', short: '89点の塩', desc: '塩をまく。この勝負、あきはもう1枚を引けなくなる。', when: '「勝負/もう1枚」の前に使える' },
@@ -45,9 +46,9 @@
   async function reveal(id, ts, note) {
     const d = DEFS[id];
     $('ifxIcon').innerHTML = img(id, 'item-img');
-    $('ifxName').textContent = d.name;
-    $('ifxDesc').textContent = d.desc;
-    $('ifxWhen').textContent = note || d.when;
+    J.set($('ifxName'), d.name);
+    J.set($('ifxDesc'), d.desc);
+    J.set($('ifxWhen'), note || d.when);
     $('ifxTitle').hidden = true; $('ifxReel').hidden = true; $('ifxBike').hidden = true; $('ifxDrop').hidden = true;
     const rv = $('ifxReveal'); rv.hidden = false;
     A().play('item');
@@ -110,8 +111,8 @@
   function ask(id) {
     const d = DEFS[id], el = $('itemAsk');
     $('askImg').innerHTML = img(id, 'item-img');
-    $('askName').textContent = d.name;
-    $('askDesc').textContent = d.desc;
+    J.set($('askName'), d.name);
+    J.set($('askDesc'), d.desc);
     el.hidden = false;
     return new Promise(res => {
       askRes = res;

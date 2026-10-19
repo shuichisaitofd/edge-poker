@@ -130,6 +130,7 @@
     const n = [];
     if (S.salt) n.push('塩まき中'); if (S.strong) n.push('ストロング中'); if (S.manju) n.push('焼きまんじゅう中');
     $('fxNotes').innerHTML = n.map(t => '<span class="charm-note">' + t + '</span>').join('');
+    Kabu.jp.apply($('fxNotes'));
   }
   function addItem(id) { if (S.items.length < MAX_ITEMS) S.items.push(id); renderRack(); savePurse(); }
   /** 新規スタートでルーレット / 3連敗でバイクが届ける */
@@ -339,7 +340,7 @@
     const v = $('verdict');
     v.className = 'verdict ' + kind;
     $('verdictTitle').textContent = title;
-    $('verdictSub').textContent = sub;
+    Kabu.jp.set($('verdictSub'), sub);
     v.style.animation = 'none'; void v.offsetWidth; v.style.animation = '';
   }
   function hideVerdict() { $('verdict').className = 'verdict off'; }
@@ -630,6 +631,7 @@
       be.dataset.kind = kind;
       $('beImg').src = kind === 'good' ? 'assets/end-good.webp' : 'assets/end-bad.webp';
       $('beCap').innerHTML = kind === 'good' ? '巻き上げた4000円で、<br>あきに焼きまんじゅうを<br>おごってやった。' : '群馬の焼きまんじゅうを<br>あきに奢ってもらった。';
+      Kabu.jp.apply($('beCap'));
       $('beStamp').textContent = kind === 'good' ? 'GOOD END' : 'BAD END';
       if (kind === 'bad') stats.badEnds++;
       stats.streak = kind === 'bad' ? 0 : stats.streak;
