@@ -351,7 +351,7 @@
     hideVerdict(); showDealerScore(null);
     setStage('dealing');
     for (let i = 0; i < 4; i++) { await dealTo({ lane: i }, true); if (run !== S.run) return; }
-    await dealTo({ dealer: true }, false);
+    await dealTo({ dealer: true }, true);
     if (run !== S.run) return;
     S.busy = false;
     setStage('pick');
@@ -415,6 +415,7 @@
   async function revealDealer(run) {
     const cards = Array.from(dealerHandEl.querySelectorAll('.card'));
     for (let k = 0; k < cards.length; k++) {
+      if (cards[k].dataset.face === 'up') continue;       // 最初から表向きの1枚目はそのまま
       const last = k === cards.length - 1;
       let rumbled = false;
       if (last) {                                          // 最後の1枚: ゴゴゴ…と拡大・振動して溜める
