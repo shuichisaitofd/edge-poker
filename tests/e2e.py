@@ -368,26 +368,25 @@ def scenario_persist(b):
     ctx.close()
 
 def scenario_nine(b):
-    """自分が9で勝つ: 手札が9になった時に激アツ予告、勝ちで大当たり(9-9-9リール)演出。"""
+    """自分が9で勝つ: 手札が9になった時に激アツ予告、その場で小銭が左右下から飛び散る演出(全画面演出なし)。"""
     pg = new_page(b, 390, 844, 4)
     stack(pg, [3, 4, 6, 7, 10, 8, 5, 2, 9, 12, 16])     # 場2=4+5=9、親=0+2+6=8
     start_and_pick(pg, 1, 100)
     pg.locator('#slotBtn').tap()
     pg.wait_for_function("document.getElementById('omen').dataset.kind==='nine' && document.getElementById('omen').classList.contains('on')", timeout=10000)
     check('[9の演出] 手札が9になった瞬間に「激アツ」予告', 'nine' == pg.evaluate("document.getElementById('omen').dataset.kind") and pg.evaluate("document.getElementById('omen').dataset.text") != '')
+    pg.wait_for_timeout(450)
+    n = pg.locator('#field .rain-coin').count()
+    side = pg.evaluate("(() => { const f = document.getElementById('field').getBoundingClientRect(); const cs = [...document.querySelectorAll('#field .rain-coin')].map(c => c.getBoundingClientRect()); return { L: cs.filter(r => r.left < f.left + f.width * .5).length, R: cs.filter(r => r.left >= f.left + f.width * .5).length }; })()")
+    check('[9の演出] 9が揃った瞬間に小銭が左右の下端から飛び散る', n >= 50 and side['L'] > 5 and side['R'] > 5, f'{n} {side}')
+    check('[9の演出] 画面は切り替わらない(全画面演出なし)', pg.locator('#jackpot').count() == 0 and pg.is_visible('#deck'))
     shot(pg, 'nine_teaser')
     wait_stage(pg, 'decide')
     check('[9の演出] 予告中も「勝負/もう1枚」は押せる', not pg.is_disabled('#standBtn'))
     pg.locator('#standBtn').tap()
-    pg.wait_for_function("document.getElementById('jackpot').classList.contains('on')", timeout=20000)
-    pg.wait_for_function("document.getElementById('jackpot').classList.contains('hit')", timeout=10000)
-    reels = pg.evaluate("[...document.querySelectorAll('#jackpot .reel')].map(r=>r.textContent).join('')")
-    check('[9の演出] 勝ち→リールが9-9-9で止まり「カブ！！大当たり」', reels == '999' and pg.inner_text('.jp-main') == 'カブ！！', reels)
-    pg.wait_for_timeout(300)
-    shot(pg, 'nine_jackpot')
     wait_stage(pg, 'result', 60000)
     s = snap(pg)
-    check('[9の演出] 結果は勝ち(+100円)・演出後に通常の結果表示へ', s['last']['outcome'] == 'win' and s['purse'] == 1100 and not pg.evaluate("document.getElementById('jackpot').classList.contains('on')"), json.dumps(s['last'], ensure_ascii=False)[:140])
+    check('[9の演出] 結果は勝ち(+100円)・演出後に通常の結果表示へ', s['last']['outcome'] == 'win' and s['purse'] == 1100, json.dumps(s['last'], ensure_ascii=False)[:140])
     check('[9の演出] コンソールエラー無し', not pg.errors, json.dumps(pg.errors[:3]))
     pg.context.close()
 

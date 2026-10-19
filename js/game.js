@@ -110,7 +110,7 @@
   /** 進行中の勝負も含めて破棄し、持ち金1,000円・あき4,000円・卓を空にして最初から(戦績は残す) */
   function resetRun() {
     S.run++; S.busy = false; fast = false;
-    FX.endCut(); FX.endJackpot(); FX.omenOff(); FX.release();
+    FX.endCut(); FX.clearCoins(); FX.omenOff(); FX.release();
     document.querySelectorAll('.card, .shout, .rain-coin').forEach(c => c.remove());
     laneChipEls.forEach(e => e.replaceChildren());
     S.lanes = [[], [], [], []]; S.dealer = []; S.deck = [];
@@ -183,7 +183,6 @@
     field.addEventListener('pointerdown', e => {
       if (e.target.closest('.sound')) return;
       if (document.getElementById('cutin').classList.contains('on')) FX.endCut();
-      if (document.getElementById('jackpot').classList.contains('on')) FX.endJackpot();
       if (S.busy) fast = true;
     });
     renderSound();
@@ -380,7 +379,7 @@
   /** 手札が9になったら「激アツ」予告(パチンコ風)。それ以外は「ざわ…」 */
   function teaseOrZawa() {
     if (S.picked >= 0 && isNine(S.lanes[S.picked])) {
-      A.play('chance'); FX.shake(2); FX.flash();
+      A.play('chance'); A.play('jackpot'); FX.shake(2); FX.flash(); FX.coinBurst(timeScale);
       FX.omen('nine', pick(['激アツ！！', '来たァ…ッ！', '9だ…ッ！']), 1500);
     } else FX.omen('zawa', pick(['ざわ…ざわ…', 'ざわ…', '…ざわ…']), 1200);
   }
@@ -452,8 +451,6 @@
     const special = j.player.type !== 'normal' || j.dealer.type === 'kuppin' || cleared;
     if (j.outcome === 'win') {
       const txt = cleared ? '完全勝利！' : j.player.type !== 'normal' ? j.player.name + '！' : '勝ち！';
-      const nine = j.player.type === 'normal' && j.player.score === 9 && !cleared;
-      if (nine) { await FX.jackpot(timeScale); if (run !== S.run) return; }
       A.play(special ? 'big' : 'win');
       FX.shake(special ? 2 : 1);
       if (cleared) FX.shout('俺の4,000円がァ…！', 'tl');
@@ -511,7 +508,7 @@
     try {
       be.dataset.kind = kind;
       $('beImg').src = kind === 'good' ? 'assets/end-good.webp' : 'assets/end-bad.webp';
-      $('beCap').innerHTML = kind === 'good' ? '巻き上げた4000円で、<br>あきに焼きまんじゅうを<br>おごってやった。' : 'この群馬の焼きまんじゅうを<br>あきに奢ってもらった。';
+      $('beCap').innerHTML = kind === 'good' ? '巻き上げた4000円で、<br>あきに焼きまんじゅうを<br>おごってやった。' : '群馬の焼きまんじゅうを<br>あきに奢ってもらった。';
       $('beStamp').textContent = kind === 'good' ? 'GOOD END' : 'BAD END';
       if (kind === 'bad') stats.badEnds++;
       stats.streak = kind === 'bad' ? 0 : stats.streak;

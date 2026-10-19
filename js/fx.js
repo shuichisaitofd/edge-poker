@@ -106,45 +106,38 @@
     d.animate([{ opacity: .9 }, { opacity: 0 }], { duration: 260, easing: 'ease-out' }).finished.then(() => d.remove()).catch(() => d.remove());
   }
 
-  /** 9(カブ)が出た時のパチンコ風「大当たり」: 虹の背景+リール9-9-9+コイン噴出。タップでスキップ可。 */
-  let jpResolve = null, jpTimers = [], jpIv = [];
-  function jackpot(ts) {
-    const el = $('jackpot'), f = $('field');
-    if (!el) return Promise.resolve();
-    ts = ts || 1;
-    const A = Kabu.audio;
-    const reels = Array.from(el.querySelectorAll('.reel'));
-    el.classList.remove('on', 'hit'); void el.offsetWidth; el.classList.add('on');
-    reels.forEach(r => { r.classList.remove('stop'); r.textContent = '7'; });
-    A.play('jackpot'); flash();
-    jpIv = reels.map(r => setInterval(() => { r.textContent = String(Math.floor(Math.random() * 10)); A.play('reel'); }, 70));
-    const at = (ms, fn) => jpTimers.push(setTimeout(fn, ms * ts));
-    reels.forEach((r, i) => at(1000 + i * 520, () => {
-      clearInterval(jpIv[i]); r.textContent = '9'; r.classList.add('stop'); A.play('impact'); shake(1);
-    }));
-    at(2100, () => { el.classList.add('hit'); shake(3); flash(); coinRain(f, ts); });
-    return new Promise(res => { jpResolve = res; jpTimers.push(setTimeout(endJackpot, (reduce ? 900 : 4300) * ts)); });
-  }
-  function endJackpot() {
-    jpTimers.forEach(clearTimeout); jpTimers = []; jpIv.forEach(clearInterval); jpIv = [];
-    const el = $('jackpot'); if (el) el.classList.remove('on', 'hit');
-    if (jpResolve) { const r = jpResolve; jpResolve = null; r(); }
-  }
-  function coinRain(f, ts) {
+  /** 9が揃った瞬間に、その場(卓の上)で左下・右下の画面外から小銭がぱしゃーんと飛び散る */
+  function clearCoins() { document.querySelectorAll('#field .rain-coin').forEach(c => c.remove()); }
+  /** 左下・右下の画面外から、斜め上へ勢いよく放物線で飛び散る小銭 */
+  function coinBurst(ts) {
     if (reduce) return;
-    const fr = f.getBoundingClientRect();
-    for (let i = 0; i < 34; i++) {
-      const c = document.createElement('img');
-      c.src = 'assets/coin-' + [5, 10, 100, 500][i % 4] + '.webp';
-      c.className = 'rain-coin'; c.alt = ''; c.draggable = false;
-      const sz = 30 + Math.random() * 26;
-      c.style.cssText = 'left:' + (Math.random() * (fr.width - sz)).toFixed(0) + 'px;top:-60px;width:' + sz.toFixed(0) + 'px;height:' + sz.toFixed(0) + 'px';
-      f.appendChild(c);
-      const dur = (1500 + Math.random() * 1200) * ts;
-      c.animate([{ transform: 'translateY(0) rotate(0deg)', opacity: 1 }, { transform: 'translateY(' + (fr.height + 120) + 'px) rotate(' + (360 + Math.random() * 540).toFixed(0) + 'deg)', opacity: 1 }],
-        { duration: dur, delay: Math.random() * 900 * ts, easing: 'cubic-bezier(.4,.1,.8,.6)', fill: 'both' }).finished.then(() => c.remove()).catch(() => c.remove());
+    const f = $('field');
+    ts = ts || 1;
+    const fr = f.getBoundingClientRect(), W = fr.width, H = fr.height;
+    const g = H * 1.5;                                  // 重力(px/s²)
+    for (let side = 0; side < 2; side++) {
+      for (let i = 0; i < 30; i++) {
+        const c = document.createElement('img');
+        c.src = 'assets/coin-' + [5, 10, 100, 500][(i + side) % 4] + '.webp';
+        c.className = 'rain-coin'; c.alt = ''; c.draggable = false;
+        const sz = 30 + Math.random() * 24;
+        c.style.cssText = 'left:0;top:0;width:' + sz.toFixed(0) + 'px;height:' + sz.toFixed(0) + 'px';
+        f.appendChild(c);
+        const dir = side === 0 ? 1 : -1;
+        const x0 = side === 0 ? -sz : W, y0 = H * (0.82 + Math.random() * 0.16);
+        const vx = dir * W * (0.45 + Math.random() * 0.75);            // 反対側の端近くまで届く
+        const vy = -H * (0.8 + Math.random() * 0.65);                  // 上向きの初速
+        const T = 2.6;                                                  // 落ちきるまで(秒)
+        const rot = (Math.random() < .5 ? -1 : 1) * (360 + Math.random() * 900);
+        const fr2 = [], N = 18;
+        for (let k = 0; k <= N; k++) {
+          const t = T * k / N;
+          fr2.push({ transform: 'translate(' + (x0 + vx * t).toFixed(1) + 'px,' + (y0 + vy * t + 0.5 * g * t * t).toFixed(1) + 'px) rotate(' + (rot * k / N).toFixed(0) + 'deg)', offset: k / N });
+        }
+        c.animate(fr2, { duration: T * 1000 * ts, delay: Math.random() * 260 * ts, easing: 'linear', fill: 'both' }).finished.then(() => c.remove()).catch(() => c.remove());
+      }
     }
   }
 
-  Kabu.fx = { jackpot, endJackpot, cutin, endCut, shake, shout, omen, omenOff, rumble, release, flash, reduce };
+  Kabu.fx = { coinBurst, clearCoins, cutin, endCut, shake, shout, omen, omenOff, rumble, release, flash, reduce };
 })();

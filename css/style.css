@@ -74,6 +74,11 @@ button:disabled { cursor: default; }
 .topbar { position: relative; z-index: 12; flex: none; height: 38px; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 8px; }
 .score-tag { margin-top: 5px; border: 0; cursor: pointer; font-size: clamp(11px, calc(var(--sw) * .034), 14px); }
 .score-tag b { color: var(--shu); font-size: 1.15em; margin-left: .3em; font-variant-numeric: tabular-nums; font-family: var(--ff); }
+.score-tag { display: inline-flex; align-items: center; gap: .35em; }
+.sc-ico { width: 1.05em; height: 1.05em; fill: var(--shu); flex: none; }
+.sc-open { margin-left: .35em; padding-left: .6em; border-left: 1px solid rgba(0, 0, 0, .3); font-size: .85em; letter-spacing: .06em; opacity: .8; animation: sc-nudge 2.4s ease-in-out infinite; }
+@keyframes sc-nudge { 0%, 70%, 100% { transform: none; } 82% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .sc-open { animation: none; } }
 .score-tag.bump { animation: bump .45s var(--ease-out); }
 .sound {
   width: 44px; height: 44px; margin-top: -2px; border: 0; border-radius: 50%;
@@ -455,36 +460,9 @@ button:disabled { cursor: default; }
 @keyframes nine-in { from { opacity: 0; transform: translate(-50%, -50%) rotate(-4deg) scale(2.6); } }
 @keyframes nine-blink { 50% { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .7)) brightness(1.5) hue-rotate(-20deg); } }
 
-.jackpot { position: absolute; inset: 0; z-index: 62; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; overflow: hidden; pointer-events: none; }
-.jackpot.on { display: flex; pointer-events: auto; animation: jp-in .2s ease-out; background: #14040a; }
-@keyframes jp-in { from { opacity: 0; } }
-.jp-rays {
-  position: absolute; left: 50%; top: 50%; width: 260vmax; height: 260vmax; margin: -130vmax 0 0 -130vmax;
-  background: repeating-conic-gradient(from 0deg, #ff3b3b 0 10deg, #ffb52e 10deg 20deg, #fff35c 20deg 30deg, #3bff7a 30deg 40deg, #3bb6ff 40deg 50deg, #b04bff 50deg 60deg);
-  opacity: .85; animation: jp-spin 2.4s linear infinite; mix-blend-mode: normal;
-}
-.jackpot::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(10, 2, 8, .1) 20%, rgba(10, 2, 8, .82) 78%); pointer-events: none; }
-@keyframes jp-spin { to { transform: rotate(360deg); } }
-.jackpot > p, .jp-reels { position: relative; z-index: 2; margin: 0; }
-.jp-top { font: 400 clamp(30px, calc(var(--sw) * .1), 52px) / 1 var(--ff-impact); letter-spacing: .3em; padding-left: .3em; color: #fff; -webkit-text-stroke: 7px #7a0a1e; paint-order: stroke fill; animation: nine-blink .2s steps(2) infinite; }
-.jp-reels { display: flex; gap: 10px; padding: 12px 14px; background: linear-gradient(#5a0f1e, #1d0610); border: 4px solid #ffd36a; border-radius: 10px; box-shadow: 0 0 0 3px #7a0a1e, 0 0 30px rgba(255, 210, 90, .8), inset 0 0 18px rgba(0, 0, 0, .8); }
-.reel {
-  display: grid; place-items: center; width: clamp(64px, calc(var(--sw) * .21), 104px); height: clamp(84px, calc(var(--sw) * .28), 138px);
-  background: linear-gradient(#cfcfcf, #fff 18%, #fff 82%, #b9b9b9); border-radius: 6px;
-  font: 400 clamp(60px, calc(var(--sw) * .2), 100px) / 1 var(--ff-impact); color: #1a1a1a; filter: blur(1.4px);
-  box-shadow: inset 0 6px 8px rgba(0, 0, 0, .35), inset 0 -6px 8px rgba(0, 0, 0, .35);
-}
-.reel.stop { filter: none; color: #d4141e; animation: reel-stop .3s cubic-bezier(.2, 1.6, .4, 1); }
-@keyframes reel-stop { from { transform: translateY(-16px) scale(1.1); } }
-.jp-main, .jp-sub { opacity: 0; }
-.jp-main { font: 400 clamp(54px, calc(var(--sw) * .2), 104px) / 1 var(--ff-impact); letter-spacing: .06em; color: #fff7c8; -webkit-text-stroke: 9px #7a0a1e; paint-order: stroke fill; text-shadow: 6px 7px 0 #ff9b1a; }
-.jp-sub { font: 400 clamp(22px, calc(var(--sw) * .07), 38px) / 1 var(--ff-impact); letter-spacing: .5em; padding-left: .5em; color: #ffe27a; -webkit-text-stroke: 5px #3a0610; paint-order: stroke fill; }
-.jackpot.hit .jp-main { animation: jp-slam .5s cubic-bezier(.2, 1.4, .4, 1) forwards; }
-.jackpot.hit .jp-sub { animation: jp-slam .5s .25s cubic-bezier(.2, 1.4, .4, 1) forwards, nine-blink .2s steps(2) .8s infinite; }
-@keyframes jp-slam { from { opacity: 0; transform: scale(3) rotate(-6deg); } to { opacity: 1; transform: scale(1) rotate(-3deg); } }
 .rain-coin { position: absolute; z-index: 65; pointer-events: none; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .5)); }
 
-@media (prefers-reduced-motion: reduce) { .jp-rays, .jp-top, .omen[data-kind="nine"]::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .omen[data-kind="nine"]::after { animation: none; } }
 
 /* ---- リセット(2回タップで実行) ---- */
 .stats-actions { display: grid; gap: 8px; margin-top: 14px; }
