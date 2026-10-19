@@ -59,40 +59,9 @@
     return el;
   }
 
-  // 日本円硬貨(SVG)。写真ではなく簡略表現。持ち金(円表記のプレート)とは見た目で区別する。
-  const COIN = {
-    5: { a: '#f0dc8a', b: '#c9a444', c: '#7d6325', ink: '#6a531c', hole: true, text: '五', sub: '5円' },
-    10: { a: '#f2b58b', b: '#b8653a', c: '#6d3320', ink: '#5a2814', text: '10', sub: '' },
-    100: { a: '#fbfbfb', b: '#c3c5c7', c: '#7d8084', ink: '#5b5e62', text: '100', sub: '' },
-    500: { a: '#fff3cd', b: '#cdb683', c: '#7c6a44', ink: '#5e4f2f', text: '500', sub: '' }
-  };
-  let coinSeq = 0;
+  // 実写硬貨(assets/coin-N.webp 透過PNG相当)。クラス名 coin-svg は既存CSS互換のため維持
   function coinSvg(amount) {
-    const k = COIN[amount];
-    const id = 'cg' + (++coinSeq);
-    let face = '';
-    if (k.hole) {
-      face =
-        '<path fill-rule="evenodd" d="M50 50m-40 0a40 40 0 1 0 80 0a40 40 0 1 0-80 0zM50 50m-10 0a10 10 0 1 0 20 0a10 10 0 1 0-20 0z" fill="url(#' + id + ')"/>' +
-        '<circle cx="50" cy="50" r="10" fill="none" stroke="' + k.c + '" stroke-width="2.2"/>' +
-        '<circle cx="50" cy="50" r="33" fill="none" stroke="' + k.ink + '" stroke-opacity=".5" stroke-width="1.2" stroke-dasharray="2.2 3.2"/>' +
-        '<text x="50" y="76" text-anchor="middle" font-size="17" font-weight="800" fill="' + k.ink + '" font-family="serif">' + k.sub + '</text>' +
-        '<text x="50" y="30" text-anchor="middle" font-size="15" font-weight="800" fill="' + k.ink + '" font-family="serif">' + k.text + '</text>';
-    } else {
-      face =
-        '<circle cx="50" cy="50" r="40" fill="url(#' + id + ')"/>' +
-        '<circle cx="50" cy="50" r="32.5" fill="none" stroke="' + k.ink + '" stroke-opacity=".45" stroke-width="1.4"/>' +
-        '<text x="50" y="' + (amount === 10 ? 58 : 57) + '" text-anchor="middle" font-size="' + (amount === 10 ? 30 : amount === 500 ? 25 : 26) +
-        '" font-weight="800" fill="' + k.ink + '" font-family="Georgia,serif" letter-spacing="-1">' + k.text + '</text>' +
-        '<text x="50" y="76" text-anchor="middle" font-size="12" font-weight="700" fill="' + k.ink + '" font-family="serif" opacity=".85">円</text>';
-    }
-    return '<svg class="coin-svg" viewBox="0 0 100 100" aria-hidden="true">' +
-      '<defs><radialGradient id="' + id + '" cx=".34" cy=".3" r=".85"><stop offset="0" stop-color="' + k.a + '"/>' +
-      '<stop offset=".62" stop-color="' + k.b + '"/><stop offset="1" stop-color="' + k.c + '"/></radialGradient></defs>' +
-      '<circle cx="50" cy="50" r="46" fill="' + k.c + '"/>' +
-      '<circle cx="50" cy="50" r="43.5" fill="' + k.b + '"/>' + face +
-      '<ellipse cx="38" cy="30" rx="22" ry="11" fill="#fff" opacity=".18" transform="rotate(-28 38 30)"/>' +
-      '</svg>';
+    return '<img class="coin-svg" src="assets/coin-' + amount + '.webp" alt="" draggable="false" width="256" height="256">';
   }
 
   Kabu.cards = { createCard, coinSvg, rankLabel, SUIT_NAMES };

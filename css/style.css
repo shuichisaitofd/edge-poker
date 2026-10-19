@@ -22,7 +22,7 @@ body {
   margin: 0;
   overflow: hidden;
   overscroll-behavior: none;
-  background: #1d150d url(../assets/tatami.webp) center / cover;
+  background: #1d150d url(../assets/bg.webp) center / cover;
   color: var(--paper);
   font-family: var(--ff);
   -webkit-text-size-adjust: 100%;
@@ -47,16 +47,10 @@ button:disabled { cursor: default; }
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: stretch;
   padding: calc(env(safe-area-inset-top, 0px) + 2px) 0 calc(env(safe-area-inset-bottom, 0px) + 12px);
-  background: #a88c55 url(../assets/tatami.webp) center / cover;
+  background: #a88c55 url(../assets/bg.webp) center / cover;
   isolation: isolate;
 }
 
-/* ---- 周辺の小物(背景。操作領域の外、UIの下) ---- */
-.prop { position: absolute; z-index: 1; width: calc(var(--sw) * .34); height: auto; pointer-events: none; }
-.prop-tl { left: -4%; top: -2%; }
-.prop-tr { right: -9%; top: -3%; }
-.prop-bl { left: -6%; bottom: -3%; }
-.prop-br { right: -6%; bottom: -3%; }
 
 .zone { position: relative; z-index: 5; flex: none; display: flex; flex-direction: column; align-items: center; }
 
@@ -203,7 +197,7 @@ button:disabled { cursor: default; }
   width: var(--coin); height: var(--coin); padding: 0; border: 0; background: none; border-radius: 50%;
   transition: transform .16s var(--ease-out), opacity .2s, filter .2s;
 }
-.coin .coin-svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .55)); }
+.coin .coin-svg { display: block; pointer-events: none; width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .55)); }
 .coin:disabled { opacity: .5; filter: saturate(.6) brightness(.8); }
 .coin.is-picked { transform: translateY(-9%); }
 .coin.is-picked .coin-svg { filter: drop-shadow(0 8px 5px rgba(0, 0, 0, .5)); }

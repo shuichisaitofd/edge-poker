@@ -7,7 +7,7 @@
 - `index.html` / `css/style.css` — 畳フィールドの縦画面UI(札・硬貨・点数は全て独立DOM)
 - `js/rules.js` — ルール判定(純粋関数)。暫定ルールは `CONFIG` で切替
 - `js/game.js` — 状態遷移・配札・入力 / `js/cards.js` 札・硬貨の描画 / `js/audio.js` 合成効果音 / `js/fx.js` 演出
-- `assets/` — 手続き生成の背景素材(`tools/gen_assets.py` で再生成)。写真素材へは同名で差し替え可
+- `assets/` — `bg.webp`(畳+小物+人の実写風背景、AI生成)、`coin-5/10/100/500.webp`(実写硬貨・透過)、`paper.webp`/`card-back.webp`(カード用、`tools/gen_assets.py` で生成)。※ gen_assets.py の畳/小物生成は旧版で現在は未使用
 - `docs/RULES.md` — ルール仕様(確定/暫定の区別)
 
 ## テスト

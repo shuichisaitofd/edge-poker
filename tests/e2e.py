@@ -61,7 +61,7 @@ OVERLAP_JS = r"""
   const add = (label, group, e) => { if (e && vis(e)) { const r = e.getBoundingClientRect(); items.push({label, group, x0:r.left, y0:r.top, x1:r.right, y1:r.bottom}); } };
   document.querySelectorAll('.card').forEach((c,i) => add('card:'+c.dataset.id, 'card', c.querySelector('.card-lift')));
   document.querySelectorAll('.lane-name').forEach((e,i) => add('laneName'+i, 'tag'+i, e));
-  document.querySelectorAll('.lane-chip svg').forEach((e,i) => add('chip', 'chip', e));
+  document.querySelectorAll('.lane-chip img').forEach((e,i) => add('chip', 'chip', e));
   document.querySelectorAll('.lane-score').forEach((e,i) => add('laneScore', 'score', e));
   add('dealerScore', 'dscore', document.getElementById('dealerScore'));
   add('dealerTag', 'dtag', document.querySelector('.tag-dealer'));
@@ -157,11 +157,11 @@ def scenario_flow(b, w, h, label=None):
         tap(pg, f'.coin[data-amount="{amt}"]')
         pg.wait_for_timeout(60)
         s = snap(pg)
-        check(f'{tag} {amt}円選択: 持ち金不変・チップ仮置き', s['coin'] == amt and s['purse'] == 1000 and pg.evaluate("document.querySelectorAll('.lane-chip svg').length") == 1)
+        check(f'{tag} {amt}円選択: 持ち金不変・チップ仮置き', s['coin'] == amt and s['purse'] == 1000 and pg.evaluate("document.querySelectorAll('.lane-chip img').length") == 1)
     check(f'{tag} 金額選択後スロット=BET確定ボタン(同時に注意書き無し)', pg.inner_text('#slotBtn') == 'BET 5円を確定' and not pg.is_disabled('#slotBtn'))
     tap(pg, '.lane[data-lane="1"]')
     pg.wait_for_timeout(400)
-    ch = pg.evaluate("[...document.querySelectorAll('.lane')].map(l=>l.querySelectorAll('.lane-chip svg').length)")
+    ch = pg.evaluate("[...document.querySelectorAll('.lane')].map(l=>l.querySelectorAll('.lane-chip img').length)")
     check(f'{tag} 札変更でチップが移動(1か所のみ)', ch == [0,1,0,0] and snap(pg)['coin'] == 5, json.dumps(ch))
     tap(pg, '.coin[data-amount="100"]')
     pg.wait_for_timeout(350)
@@ -207,7 +207,7 @@ def scenario_flow(b, w, h, label=None):
     check(f'{tag} 持ち金 = 控除後 + 返却(判定と一致)', s['purse'] == 900 + j['returned'], f"purse={s['purse']} returned={j['returned']} outcome={j['outcome']}")
     check(f'{tag} 勝敗表示が結果と一致', pg.inner_text('#verdictTitle').startswith({'win':'勝ち','lose':'負け','push':'引き分け'}[j['outcome']]), pg.inner_text('#verdictTitle'))
     check(f'{tag} 結果: スロットは「次の勝負」1つだけ', pg.inner_text('#slotBtn') == '次の勝負' and not pg.is_visible('#standBtn'))
-    pg.wait_for_function("document.querySelectorAll('.lane-chip svg').length===0", timeout=5000)
+    pg.wait_for_function("document.querySelectorAll('.lane-chip img').length===0", timeout=5000)
     pg.wait_for_timeout(150)
     r = overlaps(pg)
     check(f'{tag} 重なり無し(結果)', not r['bad'] and not r['out'], json.dumps(r, ensure_ascii=False))
@@ -278,7 +278,7 @@ def scenario_desktop(b):
     shot(pg, 'desktop_1280_bet')
     tap(pg, '#slotBtn'); wait_stage(pg, 'decide')
     tap(pg, '#standBtn'); wait_stage(pg, 'result', 60000)
-    pg.wait_for_function("document.querySelectorAll('.lane-chip svg').length===0", timeout=5000)
+    pg.wait_for_function("document.querySelectorAll('.lane-chip img').length===0", timeout=5000)
     pg.wait_for_timeout(150)
     r = overlaps(pg)
     check('[PC 1280x800] 重なり無し(結果)', not r['bad'] and not r['out'], json.dumps(r, ensure_ascii=False))
