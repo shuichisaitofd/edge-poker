@@ -168,7 +168,11 @@
     if (!itemsOn || S.busy || S.stage !== 'decide') return;
     const id = S.items[idx];
     if (!id) return;
-    if (id === 'baken') { S.moving = !S.moving; A.play('tap'); refresh(); return; }
+    if (id === 'baken' && S.moving) { S.moving = false; A.play('tap'); refresh(); return; }   // 乗り換え中にもう一度押すと取りやめ
+    A.play('tap');
+    const ok = await Items.ask(id);                      // 使う前に説明を見せて確認する
+    if (!ok || S.busy || S.stage !== 'decide' || S.items[idx] !== id) return;
+    if (id === 'baken') { S.moving = true; refresh(); return; }
     if (S.moving) { S.moving = false; refresh(); }
     if (id === 'salt') {
       if (S.salt) return;
@@ -194,7 +198,7 @@
     S.lanes = [[], [], [], []]; S.dealer = []; S.deck = [];
     S.picked = -1; S.coin = 0; S.stake = 0; S.cleared = false; S.last = null;
     S.purse = START_PURSE; S.boss = BOSS_PURSE; S.runRounds = 0;
-    Items.cancel(); resetItems();
+    Items.cancel(); Items.cancelAsk(); resetItems();
     savePurse(); hideVerdict(); showDealerScore(null);
     $('stats').hidden = true;
     setStage('idle');
@@ -712,6 +716,11 @@
 
   build();
   S.purse = loadPurse(); loadBoss();
+  Kabu.game = {
+    hasSave: () => persist && S.runRounds > 0,
+    summary: () => ({ purse: S.purse, boss: S.boss, rounds: S.runRounds }),
+    newRun: () => resetRun()
+  };
   loadStats(); renderScore(false);
   renderRack(); renderNotes();
   setStage('idle');

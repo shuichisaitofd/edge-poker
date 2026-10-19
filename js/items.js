@@ -105,6 +105,24 @@
     await reveal(finalId, ts, '3連敗のお助け。バイクが届けてくれた');
   }
 
+  /** 使う前の確認。true=使う / false=やめる */
+  let askRes = null;
+  function ask(id) {
+    const d = DEFS[id], el = $('itemAsk');
+    $('askImg').innerHTML = img(id, 'item-img');
+    $('askName').textContent = d.name;
+    $('askDesc').textContent = d.desc;
+    el.hidden = false;
+    return new Promise(res => {
+      askRes = res;
+      const done = v => { el.hidden = true; askRes = null; $('askUse').onclick = $('askCancel').onclick = null; el.querySelector('.ifx-dim').onclick = null; res(v); };
+      $('askUse').onclick = () => done(true);
+      $('askCancel').onclick = () => done(false);
+      el.querySelector('.ifx-dim').onclick = () => done(false);
+    });
+  }
+  function cancelAsk() { if (askRes) { $('askCancel').click(); } }
+
   /** 手持ちの表示。list=[id,...] */
   function renderRack(list) {
     const rack = $('items');
@@ -112,5 +130,5 @@
     rack.dataset.count = list.length;
   }
 
-  Kabu.items = { DEFS, IDS, POOL, pickId, roulette, bikeDrop, reveal, renderRack, cancel };
+  Kabu.items = { DEFS, IDS, POOL, pickId, roulette, bikeDrop, reveal, renderRack, cancel, ask, cancelAsk };
 })();

@@ -285,7 +285,7 @@ def scenario_title(b):
     txt = pg.inner_text('.load-main').replace('\n', '')
     check('[ロード画面] 「あきがガソスタに忘れた4000円を奪え」が出る', txt == 'あきがガソスタに忘れた4000円を奪え', txt)
     pg.wait_for_timeout(700)
-    check('[ロード画面] ロゴ・ボタンは消える', pg.evaluate("getComputedStyle(document.getElementById('titleBtn')).opacity") == '0' and pg.evaluate("getComputedStyle(document.querySelector('.title-head')).opacity") == '0')
+    check('[ロード画面] ロゴ・ボタンは消える', pg.evaluate("getComputedStyle(document.getElementById('titleActions')).opacity") == '0' and pg.evaluate("getComputedStyle(document.querySelector('.title-head')).opacity") == '0')
     pg.wait_for_function("document.querySelectorAll('#loadLines li.on').length>=2")
     shot(pg, 'title_01_loading')
     pg.wait_for_function("document.querySelectorAll('#loadLines li.on').length===4")
@@ -304,6 +304,39 @@ def scenario_title(b):
     pg.touchscreen.tap(195, 400)
     pg.wait_for_selector('#title', state='detached', timeout=5000)
     check('[ロード画面] タップでスキップできる', snap(pg)['stage'] == 'idle')
+    pg.context.close()
+
+def scenario_title_save(b):
+    """セーブあり: 続きから / 最初から(2回タップ)。"""
+    def mk(seed_save):
+        ctx = b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+        ctx.route(re.compile(r'https://fonts\..*'), lambda r: r.fulfill(status=200, body='', content_type='text/css'))
+        if seed_save:
+            ctx.add_init_script("if(!localStorage.getItem('x')){localStorage.setItem('x','1');localStorage.setItem('kabu.purse','3200');localStorage.setItem('kabu.boss','3300');localStorage.setItem('kabu.runRounds','5');}")
+        pg = ctx.new_page(); pg.errors = []
+        pg.on('pageerror', lambda e: pg.errors.append(str(e)))
+        pg.goto(f'{BASE}?title=1&persist=1&seed=2&speed=0.4')
+        pg.wait_for_selector('#title')
+        return pg
+    pg = mk(False)
+    check('[続きから] セーブなしは従来の1ボタン', pg.is_visible('#titleBtn') and pg.is_hidden('#titleContinue') and pg.is_hidden('#titleNew'))
+    pg.context.close()
+    pg = mk(True)
+    pg.wait_for_timeout(1500)
+    check('[続きから] セーブありは「続きから」「最初から」と状況表示', pg.is_visible('#titleContinue') and pg.is_visible('#titleNew') and pg.is_hidden('#titleBtn') and '5戦目' in pg.inner_text('#titleSave') and '3,200' in pg.inner_text('#titleSave'), pg.inner_text('#titleSave'))
+    shot(pg, 'title_save')
+    pg.locator('#titleContinue').tap()
+    pg.wait_for_selector('#title', state='detached', timeout=15000)
+    check('[続きから] 持ち金・あきが引き継がれる', snap(pg)['purse'] == 3200 and snap(pg)['boss'] == 3300, json.dumps(snap(pg)['purse']))
+    pg.context.close()
+    pg = mk(True)
+    pg.wait_for_timeout(1500)
+    pg.locator('#titleNew').tap()
+    check('[最初から] 1回目のタップでは確認表示だけ', pg.locator('#titleNew').evaluate("e=>e.classList.contains('armed')") and pg.evaluate("document.getElementById('title').dataset.phase") == 'start')
+    pg.locator('#titleNew').tap()
+    pg.wait_for_selector('#title', state='detached', timeout=15000)
+    check('[最初から] 2回目で初期化(持ち金2,500・あき4,000)', snap(pg)['purse'] == 2500 and snap(pg)['boss'] == 4000, str(snap(pg)['purse']))
+    check('[続きから] コンソールエラー無し', not pg.errors)
     pg.context.close()
 
 def scenario_boss(b):
@@ -358,6 +391,13 @@ ITEM_NAMES = ('ようすけの89点の伯方の塩', 'ひろたんのストロ�
 WIN_DECK = [3, 4, 6, 7, 10, 8, 5, 2, 9, 12, 16]           # 場1(index1)が9点で勝つ。あきは3枚目を引く並び
 LOSE_DECK = [3, 17, 5, 6, 1, 4, 18, 2, 7, 9]              # 場1に賭けて負ける並び
 
+def use_item(pg, iid):
+    tap(pg, '#items .item-btn[data-item="%s"]' % iid)
+    pg.wait_for_selector('#itemAsk:not([hidden])')
+    tap(pg, '#askUse')
+    pg.wait_for_selector('#itemAsk', state='hidden')
+
+
 def item_round(pg, deck, items, lane=1, coin=100):
     """アイテムを持った状態で、判断の場面まで進める(最初のルーレットは giveItem 済みの前提でスキップ)。"""
     stack(pg, deck)
@@ -397,6 +437,12 @@ def scenario_items(b):
     check('[塩] 判断の場面でアイテムが押せる', not pg.is_disabled('#items .item-btn[data-item="salt"]'))
     shot(pg, 'item_rack')
     tap(pg, '#items .item-btn[data-item="salt"]')
+    pg.wait_for_selector('#itemAsk:not([hidden])')
+    check('[確認] 使う前に名前と説明が出る', 'ようすけ' in pg.inner_text('#askName') and len(pg.inner_text('#askDesc')) > 5 and not snap(pg)['salt'])
+    pg.wait_for_timeout(400); shot(pg, "item_ask")
+    tap(pg, '#askCancel')
+    check('[確認] やめると使われず手持ちに残る', not snap(pg)['salt'] and 'salt' in snap(pg)['items'] and pg.is_hidden('#itemAsk'))
+    use_item(pg, 'salt')
     check('[塩] 使うと「塩まき中」の表示・使い切り', '塩まき中' in pg.inner_text('#fxNotes') and snap(pg)['salt'] and 'salt' not in snap(pg)['items'] or len(snap(pg)['items']) == len(s0['items']) - 1)
     shot(pg, 'item_salt_on')
     tap(pg, '#standBtn'); wait_stage(pg, 'result', 60000)
@@ -412,7 +458,7 @@ def scenario_items(b):
     # --- ストロング: 勝てば2倍・負ければ2倍
     pg = new_page(b, 390, 844, 3, extra='&items=1')
     item_round(pg, WIN_DECK, ['strong'])
-    tap(pg, '#items .item-btn[data-item="strong"]')
+    use_item(pg, 'strong')
     check('[ストロング] 使うと「ストロング中」', 'ストロング中' in pg.inner_text('#fxNotes'))
     tap(pg, '#standBtn'); wait_stage(pg, 'result', 60000)
     s = snap(pg)
@@ -420,7 +466,7 @@ def scenario_items(b):
     pg.context.close()
     pg = new_page(b, 390, 844, 3, extra='&items=1')
     item_round(pg, LOSE_DECK, ['strong'])
-    tap(pg, '#items .item-btn[data-item="strong"]')
+    use_item(pg, 'strong')
     tap(pg, '#standBtn'); wait_stage(pg, 'result', 60000)
     s = snap(pg)
     check('[ストロング] 負け: 負けも2倍(−200円・持ち金800・あき4,200)', s['last']['outcome'] == 'lose' and s['purse'] == 800 and s['boss'] == 4200, json.dumps({k: s[k] for k in ('purse', 'boss')}))
@@ -429,7 +475,7 @@ def scenario_items(b):
     # --- 万馬券: 隣の場に乗り換え
     pg = new_page(b, 390, 844, 3, extra='&items=1')
     item_round(pg, LOSE_DECK, ['baken'])
-    tap(pg, '#items .item-btn[data-item="baken"]')
+    use_item(pg, 'baken')
     check('[万馬券] 使うと「隣の場を選んでください」・隣の場だけ光る', pg.is_visible('#swapHint') and pg.evaluate("[...document.querySelectorAll('.lane.is-swap')].map(e=>e.dataset.lane).join(',')") == '0,2')
     shot(pg, 'item_swap')
     tap(pg, '.lane[data-lane="3"]')
@@ -444,7 +490,7 @@ def scenario_items(b):
     # --- 焼きまんじゅう: 負けても全額戻る(引き分け扱い)
     pg = new_page(b, 390, 844, 3, extra='&items=1')
     item_round(pg, LOSE_DECK, ['manju'])
-    tap(pg, '#items .item-btn[data-item="manju"]')
+    use_item(pg, 'manju')
     check('[焼きまんじゅう] 使うと「焼きまんじゅう中」', '焼きまんじゅう中' in pg.inner_text('#fxNotes'))
     tap(pg, '#standBtn'); wait_stage(pg, 'result', 60000)
     s = snap(pg)
@@ -618,6 +664,7 @@ if __name__ == '__main__':
         scenario_timing(b)
         scenario_rules(b)
         scenario_title(b)
+        scenario_title_save(b)
         scenario_boss(b)
         scenario_reset(b)
         scenario_persist(b)
