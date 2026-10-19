@@ -7,11 +7,12 @@
   const R = window.KabuRules, C = Kabu.cards, A = Kabu.audio, FX = Kabu.fx;
   const $ = id => document.getElementById(id);
   const AMOUNTS = [5, 10, 100, 500];
-  const START_PURSE = 1000;
+  const DEFAULT_START = 2500;
   const BOSS_PURSE = 4000;   // ガソスタに忘れた、あきの4,000円。0にすればクリア
 
   const params = new URLSearchParams(location.search);
   const seedParam = params.get('seed');
+  const START_PURSE = (params.has('seed') || params.has('test')) && parseInt(params.get('purse'), 10) >= 5 ? parseInt(params.get('purse'), 10) : DEFAULT_START;   // ?purse=N はテスト用
   const rnd = seedParam !== null ? R.mulberry32(parseInt(seedParam, 10) || 0) : Math.random;
   const testMode = seedParam !== null || params.has('test');
   const persist = !testMode || params.has('persist');   // テストは保存しない(?persist=1 で保存の検証だけ有効化)
@@ -107,7 +108,7 @@
       t = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = label; }, 3000);
     });
   }
-  /** 進行中の勝負も含めて破棄し、持ち金1,000円・あき4,000円・卓を空にして最初から(戦績は残す) */
+  /** 進行中の勝負も含めて破棄し、持ち金2,500円・あき4,000円・卓を空にして最初から(戦績は残す) */
   function resetRun() {
     S.run++; S.busy = false; fast = false;
     FX.endCut(); FX.clearCoins(); FX.omenOff(); FX.release();

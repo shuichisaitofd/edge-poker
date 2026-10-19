@@ -16,7 +16,7 @@ with sync_playwright() as p:
     b = p.chromium.launch()
     for (w, h) in ((390, 844), (320, 568)):
         ctx = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1, is_mobile=True, has_touch=True)
-        pg = ctx.new_page(); ctx.route(__import__('re').compile(r'https://fonts\..*'), lambda r: r.fulfill(status=200, body='', content_type='text/css')); pg.goto('http://127.0.0.1:8765/index.html?seed=11&speed=0.3'); pg.wait_for_selector('#deck')
+        pg = ctx.new_page(); ctx.route(__import__('re').compile(r'https://fonts\..*'), lambda r: r.fulfill(status=200, body='', content_type='text/css')); pg.goto('http://127.0.0.1:8765/index.html?seed=11&purse=1000&speed=0.3'); pg.wait_for_selector('#deck')
         pg.evaluate('window.__kabu.stack([3,11,5,6,8, 9,14,2,7,10])')
         shots = {}
         def grab(name): pg.wait_for_timeout(700); shots[f'{name}_{w}'] = pg.screenshot()

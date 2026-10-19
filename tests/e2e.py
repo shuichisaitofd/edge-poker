@@ -43,7 +43,7 @@ def new_page(b, w, h, seed, touch=True):
     pg.errors = []
     pg.on('console', lambda m: pg.errors.append(m.text) if m.type == 'error' else None)
     pg.on('pageerror', lambda e: pg.errors.append('PAGEERROR ' + str(e)))
-    pg.goto(f'{BASE}?seed={seed}&speed={args.speed}')
+    pg.goto(f'{BASE}?seed={seed}&speed={args.speed}&purse=1000')
     pg.wait_for_selector('#deck')
     return pg
 
@@ -355,7 +355,7 @@ def scenario_reset(b):
     pg.context.close()
 
 def scenario_persist(b):
-    """保存の復元: 持ち金が尽きた状態が残っていても、再訪時は持ち金1,000・あき4,000に戻る"""
+    """保存の復元: 持ち金が尽きた状態が残っていても、再訪時は持ち金2,500・あき4,000に戻る"""
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
     ctx.route(re.compile(r'https://fonts\.(googleapis|gstatic)\.com/.*'), lambda r: r.fulfill(status=200, body='', content_type='text/css'))
     ctx.add_init_script("if(!sessionStorage.getItem('i')){sessionStorage.setItem('i','1');localStorage.setItem('kabu.purse','0');localStorage.setItem('kabu.boss','4600');localStorage.setItem('kabu.runRounds','7');}")
@@ -364,7 +364,7 @@ def scenario_persist(b):
     pg.goto(f'{BASE}?seed=2&persist=1&speed=0.4')
     pg.wait_for_function('window.__kabu')
     s = snap(pg)
-    check('[保存] 負け状態が残っていても初期値(1,000/4,000)から', s['purse'] == 1000 and s['boss'] == 4000, json.dumps(s)[:160])
+    check('[保存] 負け状態が残っていても初期値(2,500/4,000)から', s['purse'] == 2500 and s['boss'] == 4000, json.dumps(s)[:160])
     ctx.close()
 
 def scenario_nine(b):
@@ -391,7 +391,7 @@ def scenario_nine(b):
     pg.context.close()
 
 def scenario_bankrupt(b):
-    """持ち金が尽きる → 「次の日」→ 焼きまんじゅう BAD END → 再挑戦(持ち金1,000円・あき4,000円)。"""
+    """持ち金が尽きる → 「次の日」→ 焼きまんじゅう BAD END → 再挑戦(持ち金2,500円・あき4,000円)。"""
     pg = new_page(b, 390, 844, 9)
     pg.evaluate('window.__kabu.setPurse(100)')
     pg.evaluate('window.__kabu.setBoss(2500)')
