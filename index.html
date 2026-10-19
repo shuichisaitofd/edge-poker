@@ -9,7 +9,7 @@
 <link rel="preload" as="image" href="assets/bg.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@600;800&display=swap">
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@600;800&family=Yuji+Syuku&family=Yuji+Boku&display=swap">
 <script>if(/[?&](seed|test)=/.test(location.search)&&!/[?&]title=1/.test(location.search))document.documentElement.classList.add("skip-title")</script>
 <link rel="preload" as="image" href="assets/title.webp">
 <link rel="prefetch" as="image" href="assets/yakimanju.webp">
@@ -93,6 +93,7 @@
     <div class="title-head">
       <p class="title-kicker">ガソスタの忘れもの</p>
       <h1 class="title-logo">旅館カブ</h1>
+      <p class="title-sub">The Forgotten 4000 Yen</p>
     </div>
     <button class="title-btn" id="titleBtn" type="button">あきから4000円を奪う</button>
     <div class="loading" id="loading" aria-live="polite">
@@ -111,10 +112,15 @@
   <!-- BAD END(持ち金が尽きた翌日)/ GOOD END(あきを倒した翌日) -->
   <div class="badend" id="badend" data-kind="bad" hidden aria-live="polite">
     <p class="be-day" id="beDay">次の日</p>
-    <figure class="be-scene" id="beScene">
-      <img id="beImg" src="assets/yakimanju.webp" alt="群馬の焼きまんじゅう" draggable="false">
-      <figcaption id="beCap">この群馬の焼きまんじゅうを<br>あきに奢ってもらった。</figcaption>
-    </figure>
+    <div class="be-phone" id="beScene">
+      <div class="phone-body"><div class="phone-screen">
+        <div class="ph-status"><span id="beClock">9:41</span><span class="ph-island"></span><span>5G ▮</span></div>
+        <div class="ph-nav"><span>‹ アルバム</span><span id="beDate">10月19日</span></div>
+        <img class="be-scene-img" id="beImg" src="assets/yakimanju.webp" alt="思い出の写真" draggable="false">
+        <p class="ph-cap" id="beCap">この群馬の焼きまんじゅうを<br>あきに奢ってもらった。</p>
+        <div class="ph-bar"><i>♡</i><i>⤴</i><i>ⓘ</i><i>🗑</i></div>
+      </div></div>
+    </div>
     <p class="be-stamp" id="beStamp">BAD END</p>
     <button class="title-btn be-btn" id="beBtn" type="button">もう一度あきに挑む</button>
   </div>
