@@ -502,7 +502,7 @@
     fast = false;
     be.dataset.kind = kind;
     $('beImg').src = kind === 'good' ? 'assets/clear.webp' : 'assets/yakimanju.webp';
-    $('beCap').innerHTML = kind === 'good' ? '巻き上げた4000円で、<br>あきに焼きまんじゅうをおごってやった。' : 'この群馬の焼きまんじゅうを<br>あきに奢ってもらった。';
+    $('beCap').innerHTML = kind === 'good' ? '巻き上げた4000円で、<br>あきに焼きまんじゅうを<br>おごってやった。' : 'この群馬の焼きまんじゅうを<br>あきに奢ってもらった。';
     $('beStamp').textContent = kind === 'good' ? 'GOOD END' : 'BAD END';
     if (kind === 'bad') stats.badEnds++;
     stats.streak = kind === 'bad' ? 0 : stats.streak;

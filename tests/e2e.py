@@ -323,7 +323,7 @@ def scenario_boss(b):
     tap(pg, '#slotBtn')
     pg.wait_for_function("document.getElementById('badend').classList.contains('s-btn')", timeout=12000)
     pg.wait_for_timeout(900)
-    check('[GOOD END] あきに焼きまんじゅうをおごる/GOOD END表示', pg.evaluate("document.getElementById('badend').dataset.kind") == 'good' and pg.inner_text('#beStamp') == 'GOOD END' and 'あきに焼きまんじゅうをおごってやった' in pg.inner_text('#beCap').replace('\\n', '') and pg.evaluate("document.querySelector('#beImg').src").endswith('clear.webp'), pg.inner_text('#beCap'))
+    check('[GOOD END] あきに焼きまんじゅうをおごる/GOOD END表示', pg.evaluate("document.getElementById('badend').dataset.kind") == 'good' and pg.inner_text('#beStamp') == 'GOOD END' and 'あきに焼きまんじゅうをおごってやった' in ''.join(pg.inner_text('#beCap').split()) and pg.evaluate("document.querySelector('#beImg').src").endswith('clear.webp'), pg.inner_text('#beCap'))
     shot(pg, 'goodend')
     pg.locator('#beBtn').tap(); wait_stage(pg, 'pick')
     s = snap(pg)
