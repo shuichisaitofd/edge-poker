@@ -139,5 +139,22 @@
     }
   }
 
-  Kabu.fx = { coinBurst, clearCoins, cutin, endCut, shake, shout, omen, omenOff, rumble, release, flash, reduce };
+  /** 塩まき: あきの頭上から白い粒がぱらぱらと降る */
+  function saltBurst(ts) {
+    if (reduce) return;
+    const f = $('field'), fr = f.getBoundingClientRect();
+    ts = ts || 1;
+    for (let i = 0; i < 46; i++) {
+      const g = document.createElement('i');
+      g.className = 'salt-grain';
+      const sz = 3 + Math.random() * 4;
+      const x = fr.width * (0.2 + Math.random() * 0.6), y0 = fr.height * 0.06;
+      g.style.cssText = 'left:0;top:0;width:' + sz.toFixed(1) + 'px;height:' + sz.toFixed(1) + 'px';
+      f.appendChild(g);
+      const drift = (Math.random() * 2 - 1) * 70, fall = fr.height * (0.2 + Math.random() * 0.22);
+      g.animate([{ transform: 'translate(' + x + 'px,' + y0 + 'px) rotate(0)', opacity: 1 }, { transform: 'translate(' + (x + drift) + 'px,' + (y0 + fall) + 'px) rotate(' + (Math.random() * 360).toFixed(0) + 'deg)', opacity: 0 }],
+        { duration: (900 + Math.random() * 700) * ts, delay: Math.random() * 280 * ts, easing: 'cubic-bezier(.3,.6,.5,1)', fill: 'both' }).finished.then(() => g.remove()).catch(() => g.remove());
+    }
+  }
+  Kabu.fx = { saltBurst, coinBurst, clearCoins, cutin, endCut, shake, shout, omen, omenOff, rumble, release, flash, reduce };
 })();

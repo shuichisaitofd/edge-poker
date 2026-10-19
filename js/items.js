@@ -6,19 +6,17 @@
   const $ = id => document.getElementById(id);
   const A = () => Kabu.audio;
 
-  const ICON = {
-    peek: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M3 24C10 13 17 9 24 9s14 4 21 15c-7 11-14 15-21 15S10 35 3 24z" fill="#fff8e6" stroke="#2b1a0e" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="24" r="8.5" fill="#24365c"/><circle cx="24" cy="24" r="3.6" fill="#0c0f1a"/><circle cx="27" cy="21" r="2" fill="#fff"/></svg>',
-    redraw: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="12" y="7" width="24" height="34" rx="3" fill="#fff8e6" stroke="#2b1a0e" stroke-width="2.5"/><path d="M33 17a10 10 0 0 0-17 1M15 31a10 10 0 0 0 17-1" fill="none" stroke="#a52b1a" stroke-width="3" stroke-linecap="round"/><path d="M16 11v7h7M32 37v-7h-7" fill="none" stroke="#a52b1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    charm: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 9h20l3 6v24a3 3 0 0 1-3 3H14a3 3 0 0 1-3-3V15z" fill="#a52b1a" stroke="#2b1a0e" stroke-width="2.5" stroke-linejoin="round"/><path d="M11 15h26" stroke="#2b1a0e" stroke-width="2.5"/><path d="M24 4v8" stroke="#c9a24a" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="4.5" r="2.5" fill="#c9a24a"/><text x="24" y="35" text-anchor="middle" font-size="15" font-weight="700" fill="#f3d98a" font-family="serif">守</text></svg>'
-  };
-
   const DEFS = {
-    peek: { id: 'peek', name: 'のぞき見', short: 'のぞき見', desc: 'あきの2枚目を、こっそり表に返す。', when: '「勝負/もう1枚」の前に使える' },
-    redraw: { id: 'redraw', name: '引き直し', short: '引き直し', desc: '自分の2枚目を捨てて、引き直す。', when: '「勝負/もう1枚」の前に使える' },
-    charm: { id: 'charm', name: 'お守り', short: 'お守り', desc: 'この勝負に負けても、賭け金の半分が戻る。', when: '「勝負/もう1枚」の前に使える' }
+    salt: { id: 'salt', img: 'assets/item-salt.webp', name: 'ようすけの89点の伯方の塩', short: '89点の塩', desc: '塩をまく。この勝負、あきはもう1枚を引けなくなる。', when: '「勝負/もう1枚」の前に使える' },
+    strong: { id: 'strong', img: 'assets/item-strong.webp', name: 'ひろたんのストロング', short: 'ストロング', desc: 'ハイリスク・ハイリターン。この勝負、勝てば配当2倍、負ければ負けも2倍。', when: '「勝負/もう1枚」の前に使える' },
+    baken: { id: 'baken', img: 'assets/item-baken.webp', name: 'エノの万馬券', short: '万馬券', desc: '賭けた場を、隣の場に乗り換える。賭け金はそのまま。', when: '「勝負/もう1枚」の前に使える' },
+    manju: { id: 'manju', img: 'assets/item-manju.webp', name: 'よく喋るおじさんの焼きまんじゅう', short: '焼きまんじゅう', desc: '次の勝負で負けても、賭け金が全額戻る(引き分け扱い)。', when: '「勝負/もう1枚」の前に使える', special: true }
   };
   const IDS = Object.keys(DEFS);
-  const pickId = rnd => IDS[Math.floor((rnd || Math.random)() * IDS.length)];
+  const POOL = IDS.filter(id => !DEFS[id].special);          // ルーレットの景品(焼きまんじゅうはバイク専用)
+  const pickId = rnd => POOL[Math.floor((rnd || Math.random)() * POOL.length)];
+  const img = (id, cls) => '<img class="' + (cls || 'item-img') + '" src="' + DEFS[id].img + '" alt="" draggable="false">';
+  IDS.concat(['bike']).forEach(id => { const i = new Image(); i.src = id === 'bike' ? 'assets/item-bike.webp' : DEFS[id].img; });   // 先読み
 
   let waiter = null, timers = [], anims = [];
   const wait = (ms, ts) => new Promise(r => { const t = setTimeout(r, Math.max(1, ms * ts)); timers.push(t); });
@@ -46,7 +44,7 @@
   /** 取得時: 後光+拡大して、名前と説明を出す。タップで閉じる */
   async function reveal(id, ts, note) {
     const d = DEFS[id];
-    $('ifxIcon').innerHTML = ICON[id];
+    $('ifxIcon').innerHTML = img(id, 'item-img');
     $('ifxName').textContent = d.name;
     $('ifxDesc').textContent = d.desc;
     $('ifxWhen').textContent = note || d.when;
@@ -67,12 +65,12 @@
     $('ifxTitle').textContent = 'お助けアイテム 抽選'; $('ifxTitle').hidden = false;
     const reel = $('ifxReel'); reel.hidden = false;
     const seq = [];
-    for (let i = 0; i < 22; i++) seq.push(IDS[i % IDS.length]);
+    for (let i = 0; i < 22; i++) seq.push(POOL[i % POOL.length]);
     seq.push(finalId);
     for (let i = 0; i < seq.length; i++) {
       const d = DEFS[seq[i]];
-      reel.querySelector('.ifx-ico').innerHTML = ICON[seq[i]];
-      reel.querySelector('b').textContent = d.name;
+      reel.querySelector('.ifx-ico').innerHTML = img(seq[i], 'item-img');
+      reel.querySelector('b').textContent = d.short;
       A().play('reel');
       await wait(55 + Math.pow(i / seq.length, 3) * 420, ts);
       if (!fxEl() || fxEl().hidden) return;
@@ -97,8 +95,8 @@
     Kabu.fx.shake(1);
     anims.push(bike.animate([{ transform: BASE + 'translateX(0) rotate(0)' }, { transform: BASE + 'translateX(-6px) rotate(-4deg)', offset: .3 }, { transform: BASE + 'translateX(0) rotate(0)' }], { duration: 300 * ts, fill: 'both' }));
     await wait(320, ts); if (el.hidden) return;
-    const drop = $('ifxDrop'); drop.hidden = false; drop.innerHTML = ICON[finalId];
-    anims.push(drop.animate([{ transform: 'translate(-50%,-10px) scale(.6)', opacity: 0 }, { transform: 'translate(-50%,60px) scale(1)', opacity: 1, offset: .5 }, { transform: 'translate(-50%,36px) scale(1)', offset: .7 }, { transform: 'translate(-50%,60px) scale(1)' }], { duration: 650 * ts, fill: 'both' }));
+    const drop = $('ifxDrop'); drop.hidden = false; drop.innerHTML = img(finalId, 'item-img');
+    anims.push(drop.animate([{ transform: 'translate(-50%,-10px) scale(.6)', opacity: 0 }, { transform: 'translate(-50%,70px) scale(1)', opacity: 1, offset: .5 }, { transform: 'translate(-50%,44px) scale(1)', offset: .7 }, { transform: 'translate(-50%,70px) scale(1)' }], { duration: 650 * ts, fill: 'both' }));
     A().play('land');
     await wait(900, ts); if (el.hidden) return;
     anims.push(bike.animate([{ transform: BASE + 'translateX(0)' }, { transform: BASE + 'translateX(' + (-W) + 'px)' }], { duration: 700 * ts, easing: 'cubic-bezier(.6,0,.9,.4)', fill: 'both' }));
@@ -110,9 +108,9 @@
   /** 手持ちの表示。list=[id,...] */
   function renderRack(list) {
     const rack = $('items');
-    rack.innerHTML = list.map((id, i) => '<button type="button" class="item-btn" data-idx="' + i + '" data-item="' + id + '" aria-label="' + DEFS[id].name + ': ' + DEFS[id].desc + '">' + ICON[id] + '<span>' + DEFS[id].short + '</span></button>').join('');
+    rack.innerHTML = list.map((id, i) => '<button type="button" class="item-btn" data-idx="' + i + '" data-item="' + id + '" aria-label="' + DEFS[id].name + ': ' + DEFS[id].desc + '">' + img(id, 'item-img') + '<span>' + DEFS[id].short + '</span></button>').join('');
     rack.dataset.count = list.length;
   }
 
-  Kabu.items = { DEFS, IDS, ICON, pickId, roulette, bikeDrop, reveal, renderRack, cancel };
+  Kabu.items = { DEFS, IDS, POOL, pickId, roulette, bikeDrop, reveal, renderRack, cancel };
 })();

@@ -14,7 +14,7 @@
 <link rel="preload" as="image" href="assets/title.webp">
 <link rel="prefetch" as="image" href="assets/end-bad.webp">
 <link rel="prefetch" as="image" href="assets/end-good.webp">
-<link rel="stylesheet" href="css/style.css?v=20261019g">
+<link rel="stylesheet" href="css/style.css?v=20261019k">
 </head>
 <body>
 <main class="app" id="app">
@@ -40,6 +40,7 @@
     </section>
 
     <section class="zone zone-mid" aria-live="polite">
+      <div class="swap-hint" id="swapHint" hidden>乗り換える隣の場を選んでください</div>
       <div class="start-hint" id="startHint">画面をタップで配る</div>
       <div class="verdict off" id="verdict">
         <strong id="verdictTitle"></strong>
@@ -52,7 +53,7 @@
     <div class="sp2"></div>
 
     <section class="zone zone-bank">
-      <div class="purse" id="purse">持ち金 <strong id="purseAmount">2,500</strong>円<span class="charm-note" id="charmNote" hidden>お守り中</span></div>
+      <div class="purse" id="purse">持ち金 <strong id="purseAmount">2,500</strong>円<span class="fx-notes" id="fxNotes"></span></div>
     </section>
 
     <section class="zone zone-coins" id="coins" aria-label="賭け金の硬貨"></section>
@@ -72,7 +73,7 @@
       <div class="ifx-dim"></div>
       <p class="ifx-title" id="ifxTitle" hidden></p>
       <div class="ifx-reel" id="ifxReel" hidden><span class="ifx-ico"></span><b></b></div>
-      <div class="ifx-bike" id="ifxBike" hidden><svg viewBox="0 0 140 84" aria-hidden="true"><circle cx="28" cy="62" r="15" fill="#15110d" stroke="#e8dfc9" stroke-width="5"/><circle cx="112" cy="62" r="15" fill="#15110d" stroke="#e8dfc9" stroke-width="5"/><circle cx="28" cy="62" r="4" fill="#e8dfc9"/><circle cx="112" cy="62" r="4" fill="#e8dfc9"/><path d="M104 60L97 30l12-4" fill="none" stroke="#e8dfc9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 56C35 42 48 36 62 38l22-2c9 0 14 4 18 12l6 12-20 2H46z" fill="#a52b1a" stroke="#e8dfc9" stroke-width="3" stroke-linejoin="round"/><path d="M38 35h36q5 0 5 4H34q0-4 4-4z" fill="#15110d" stroke="#e8dfc9" stroke-width="2.5"/><circle cx="112" cy="32" r="5.5" fill="#ffe27a" stroke="#e8dfc9" stroke-width="2"/><rect x="4" y="10" width="40" height="28" rx="3" fill="#a52b1a" stroke="#e8dfc9" stroke-width="3"/><text x="24" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="#f3d98a" font-family="serif">出前</text></svg></div>
+      <div class="ifx-bike" id="ifxBike" hidden><img src="assets/item-bike.webp" alt="" draggable="false"></div>
       <div class="ifx-drop" id="ifxDrop" hidden></div>
       <div class="ifx-reveal" id="ifxReveal" hidden>
         <div class="ifx-halo"></div>
@@ -126,12 +127,12 @@
   </div>
 </main>
 <noscript><p style="color:#fff;text-align:center">JavaScriptを有効にしてください。</p></noscript>
-<script src="js/rules.js?v=20261019g"></script>
-<script src="js/cards.js?v=20261019g"></script>
-<script src="js/audio.js?v=20261019g"></script>
-<script src="js/fx.js?v=20261019g"></script>
-<script src="js/items.js?v=20261019g"></script>
-<script src="js/game.js?v=20261019g"></script>
-<script src="js/title.js?v=20261019g"></script>
+<script src="js/rules.js?v=20261019k"></script>
+<script src="js/cards.js?v=20261019k"></script>
+<script src="js/audio.js?v=20261019k"></script>
+<script src="js/fx.js?v=20261019k"></script>
+<script src="js/items.js?v=20261019k"></script>
+<script src="js/game.js?v=20261019k"></script>
+<script src="js/title.js?v=20261019k"></script>
 </body>
 </html>

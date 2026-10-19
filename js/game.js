@@ -30,7 +30,7 @@
     deck: [], lanes: [[], [], [], []], dealer: [],
     picked: -1, coin: 0, stake: 0,
     purse: START_PURSE, round: 0, boss: BOSS_PURSE, runRounds: 0,
-    items: [], loseStreak: 0, startGiven: false, charm: false,   // お助けアイテム
+    items: [], loseStreak: 0, startGiven: false, salt: false, strong: false, manju: false, moving: false,   // お助けアイテム
     forced: null,       // テスト用: 次の山札の並びを固定
     last: null
   };
@@ -115,7 +115,7 @@
     });
   }
   // ---------------------------------------------------------------- お助けアイテム
-  function resetItems() { S.items = []; S.loseStreak = 0; S.startGiven = false; S.charm = false; renderRack(); renderCharm(); }
+  function resetItems() { S.items = []; S.loseStreak = 0; S.startGiven = false; S.salt = S.strong = S.manju = S.moving = false; renderRack(); renderNotes(); }
   function renderRack() {
     const rack = $('items');
     rack.hidden = !itemsOn || !S.items.length;
@@ -126,7 +126,11 @@
     const on = S.stage === 'decide' && !S.busy;
     document.querySelectorAll('#items .item-btn').forEach(b => { b.disabled = !on; });
   }
-  function renderCharm() { $('charmNote').hidden = !S.charm; $('purse').classList.toggle('charm', !!S.charm); }
+  function renderNotes() {
+    const n = [];
+    if (S.salt) n.push('塩まき中'); if (S.strong) n.push('ストロング中'); if (S.manju) n.push('焼きまんじゅう中');
+    $('fxNotes').innerHTML = n.map(t => '<span class="charm-note">' + t + '</span>').join('');
+  }
   function addItem(id) { if (S.items.length < MAX_ITEMS) S.items.push(id); renderRack(); savePurse(); }
   /** 新規スタートでルーレット / 3連敗でバイクが届ける */
   async function giveItems(run) {
@@ -138,43 +142,46 @@
       addItem(id);
     } else if (S.loseStreak >= 3 && S.items.length < MAX_ITEMS) {
       S.loseStreak = 0;
-      const id = Items.pickId(cos);
+      const id = 'manju';                      // バイクが届けるのは焼きまんじゅう
       await Items.bikeDrop(id, timeScale);
       if (run !== S.run) return;
       addItem(id);
     }
     savePurse();
   }
+  /** 万馬券: 隣の場へ乗り換える(賭け金の硬貨も一緒に移る) */
+  function moveTo(lane) {
+    const from = S.picked;
+    const chip = laneChipEls[from].firstElementChild;
+    const r0 = chip && chip.getBoundingClientRect();
+    S.picked = lane; S.moving = false; S.items.splice(S.items.indexOf('baken'), 1);
+    if (chip) laneChipEls[lane].appendChild(chip);
+    refresh(); renderRack(); savePurse();
+    if (chip && r0) {
+      const r1 = chip.getBoundingClientRect();
+      chip.animate([{ transform: 'translate(' + (r0.left - r1.left) + 'px,' + (r0.top - r1.top) + 'px)' }, { transform: 'none' }], { duration: 380 * timeScale, easing: 'cubic-bezier(.2,.8,.3,1)' });
+    }
+    A.play('coin');
+    if (isNine(S.lanes[lane])) teaseOrZawa(); else FX.omen('zawa', '乗り換え…！', 900);
+  }
   async function useItem(idx) {
     if (!itemsOn || S.busy || S.stage !== 'decide') return;
     const id = S.items[idx];
     if (!id) return;
-    const run = S.run;
-    if (id === 'charm') {
-      if (S.charm) return;
-      S.items.splice(idx, 1); S.charm = true;
-      A.play('coin'); renderRack(); renderCharm(); savePurse();
-    } else if (id === 'peek') {
-      const c = dealerHandEl.querySelectorAll('.card')[1];
-      if (!c || c.dataset.face === 'up') return;
-      S.items.splice(idx, 1);
-      c.dataset.face = 'up'; A.play('flip');
-      showDealerScore('あき ' + handText(S.dealer, true), true);
-      renderRack(); savePurse();
-    } else if (id === 'redraw') {
-      const lane = S.picked, cardsEl = laneCardsEls[lane];
-      const old = cardsEl.querySelector('.card:last-child');
-      if (!old || S.lanes[lane].length !== 2) return;
-      S.items.splice(idx, 1);
-      S.busy = true; renderRack(); refresh();
-      const a = old.animate([{ opacity: 1 }, { opacity: 0, transform: getComputedStyle(old).transform + ' translateY(-24px) rotate(14deg)' }], { duration: 260 * timeScale, fill: 'forwards' });
-      try { await a.finished; } catch (e) { /* ignore */ }
-      if (run !== S.run) return;
-      old.remove(); S.lanes[lane].pop();
-      await dealTo({ lane }, true);
-      if (run !== S.run) return;
-      if (isNine(S.lanes[lane])) teaseOrZawa();
-      S.busy = false; refresh(); savePurse();
+    if (id === 'baken') { S.moving = !S.moving; A.play('tap'); refresh(); return; }
+    if (S.moving) { S.moving = false; refresh(); }
+    if (id === 'salt') {
+      if (S.salt) return;
+      S.items.splice(idx, 1); S.salt = true;
+      A.play('flip'); FX.saltBurst(timeScale); renderRack(); renderNotes(); savePurse();
+    } else if (id === 'strong') {
+      if (S.strong) return;
+      S.items.splice(idx, 1); S.strong = true;
+      A.play('chance'); FX.shake(1); renderRack(); renderNotes(); savePurse();
+    } else if (id === 'manju') {
+      if (S.manju) return;
+      S.items.splice(idx, 1); S.manju = true;
+      A.play('coin'); renderRack(); renderNotes(); savePurse();
     }
   }
 
@@ -284,10 +291,13 @@
     $('deckTag').textContent = st === 'idle' ? 'タップで配る' : '残り ' + S.deck.length + '枚';
     deckBtn.disabled = !(st === 'idle' && !S.busy);
 
-    const selectable = (st === 'pick' || st === 'bet') && !S.busy;
+    const moving = S.moving && st === 'decide' && !S.busy;
+    const selectable = ((st === 'pick' || st === 'bet') && !S.busy) || moving;
+    $('swapHint').hidden = !moving;
     laneEls.forEach((el, i) => {
       const sel = S.picked === i;
       el.classList.toggle('is-selected', sel);
+      el.classList.toggle('is-swap', moving && Math.abs(i - S.picked) === 1);
       el.classList.toggle('is-dim', S.picked >= 0 && !sel && st !== 'pick' && st !== 'bet');
       el.setAttribute('aria-pressed', String(sel));
       el.style.pointerEvents = selectable ? '' : 'none';
@@ -349,6 +359,11 @@
   // ---------------------------------------------------------------- 入力
   function onLane(i) {
     if (S.busy) return;
+    if (S.moving && S.stage === 'decide') {
+      if (Math.abs(i - S.picked) === 1) moveTo(i);
+      else if (i === S.picked) { S.moving = false; refresh(); }
+      return;
+    }
     if (S.stage === 'pick') {
       S.picked = i; S.coin = 0; A.play('tap'); setStage('bet');
     } else if (S.stage === 'bet') {
@@ -463,7 +478,7 @@
     if (S.busy || S.stage !== 'decide') return;
     if (hit && !R.playerCanHit(S.lanes[S.picked])) return;
     const run = S.run;
-    S.busy = true;
+    S.busy = true; S.moving = false;
     if (hit) {
       setStage('hitting');
       FX.shout(pick(['まだ行くのか！', '攻めるねぇ…', '欲張るなッ！']), pick(['tl', 'bl']));
@@ -474,7 +489,7 @@
       await sleep(380);
     }
     setStage('dealer');
-    if (R.dealerShouldDraw(S.dealer)) {
+    if (!S.salt && R.dealerShouldDraw(S.dealer)) {
       await sleep(320);
       await dealTo({ dealer: true }, false);
       if (run !== S.run) return;
@@ -526,15 +541,26 @@
     if (j.outcome === 'win' && j.profit > S.boss) {          // あきの持ち金以上は取れない
       j.profit = S.boss; j.returned = S.stake + S.boss; j.delta = S.boss;
     }
-    if (j.outcome === 'lose' && S.charm) {                      // お守り: 負けても賭け金の半分が戻る
-      const back = Math.floor(S.stake / 2);
-      j.returned = back; j.delta = -(S.stake - back); j.charm = back;
+    let bossGain = 0;                                          // 負けた掛け金はあきの持ち金になる
+    if (j.outcome === 'lose' && S.manju) {                     // 焼きまんじゅう: 負けても賭け金が全額戻る(引き分け扱い)
+      j.outcome = 'push'; j.returned = S.stake; j.delta = 0; j.manju = true; j.reason = '焼きまんじゅう';
     }
-    S.charm = false; renderCharm();
+    if (j.outcome === 'win' && S.strong) {                     // ストロング: 勝てば配当2倍
+      j.profit = Math.min(j.profit * 2, S.boss); j.returned = S.stake + j.profit; j.delta = j.profit; j.strong = true;
+    } else if (j.outcome === 'lose') {
+      bossGain = S.stake;
+      j.returned = 0;
+      if (S.strong) {                                          // ストロング: 負けも2倍
+        const extra = Math.min(S.stake, S.purse);
+        j.returned -= extra; bossGain += extra; j.strong = true;
+      }
+      j.delta = j.returned - S.stake;
+    }
+    S.salt = S.strong = S.manju = S.moving = false; renderNotes();
     if (j.outcome === 'lose') S.loseStreak++; else if (j.outcome === 'win') S.loseStreak = 0;
     S.last = j;
     if (j.outcome === 'win') S.boss -= j.profit;
-    else if (j.outcome === 'lose') S.boss += S.stake - (j.charm || 0);   // 負けた掛け金はあきの持ち金になる          // 負けた掛け金はあきの持ち金になる
+    else if (j.outcome === 'lose') S.boss += bossGain;          // 負けた掛け金はあきの持ち金になる
     const cleared = S.boss <= 0;
     await sleep(380);
     if (run !== S.run) return;
@@ -569,7 +595,7 @@
     const dt = j.dealer.type === 'normal' ? j.dealer.score + '点' : j.dealer.name;
     const money = j.delta > 0 ? '＋' + fmt(j.delta) + '円' : j.delta < 0 ? '−' + fmt(-j.delta) + '円' : '±0円';
     const title = cleared ? 'クリア！  ＋' + fmt(j.delta) + '円' : (j.outcome === 'win' ? '勝ち' : j.outcome === 'lose' ? '負け' : '引き分け') + '  ' + money;
-    showVerdict(j.outcome, title, 'あなた ' + pt + ' 対 親 ' + dt + (j.charm ? '(お守りで' + fmt(j.charm) + '円戻った)' : ''));
+    showVerdict(j.outcome, title, 'あなた ' + pt + ' 対 親 ' + dt + (j.manju ? '(焼きまんじゅうで全額戻った)' : j.strong ? '(ストロング効果)' : ''));
     settleChip(j.outcome);
     S.busy = false;
     setStage('result');
@@ -657,7 +683,7 @@
     const landed = sel => Array.from(document.querySelectorAll(sel)).filter(c => c.dataset.state === 'landed').length;
     return {
       stage: S.stage, busy: S.busy, round: S.round, boss: S.boss, cleared: !!S.cleared, purse: S.purse, stake: S.stake, picked: S.picked, coin: S.coin,
-      deckLeft: S.deck.length, items: S.items.slice(), loseStreak: S.loseStreak, charm: S.charm, startGiven: S.startGiven,
+      deckLeft: S.deck.length, items: S.items.slice(), loseStreak: S.loseStreak, salt: S.salt, strong: S.strong, manju: S.manju, moving: S.moving, startGiven: S.startGiven,
       lanes: S.lanes.map(l => l.map(c => c.id)),
       dealer: S.dealer.map(c => c.id),
       domLanes: laneCardsEls.map((_, i) => landed('.lane[data-lane="' + i + '"] .card')),
@@ -677,6 +703,7 @@
       return true;
     },
     giveItem(id) { addItem(id); },
+    setItems(ids) { S.items = ids.slice(0, MAX_ITEMS); renderRack(); },
     setLoseStreak(n) { S.loseStreak = n; },
     setPurse(v) { S.purse = v; refresh(); },
     setBoss(v) { S.boss = v; refresh(); },
@@ -686,6 +713,6 @@
   build();
   S.purse = loadPurse(); loadBoss();
   loadStats(); renderScore(false);
-  renderRack(); renderCharm();
+  renderRack(); renderNotes();
   setStage('idle');
 })();
